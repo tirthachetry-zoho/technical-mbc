@@ -1,0 +1,73 @@
+/**
+ * WhatsApp notification utilities
+ */
+
+const ADMIN_WHATSAPP = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "";
+
+/**
+ * Format order details for WhatsApp message
+ */
+export function formatOrderMessage(order: {
+  orderNumber: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  amount: number;
+  items: Array<{ title: string; price: number }>;
+}): string {
+  const customerInfo = order.guestName 
+    ? `*Customer:* ${order.guestName}\n*Email:* ${order.guestEmail}\n*Phone:* ${order.guestPhone || 'N/A'}`
+    : `*Email:* ${order.guestEmail || 'N/A'}`;
+
+  const itemsList = order.items
+    .map((item, idx) => `${idx + 1}. ${item.title} - ₹${(item.price / 100).toFixed(2)}`)
+    .join('\n');
+
+  return encodeURIComponent(
+    `🛒 *New Order Confirmed*\n\n` +
+    `*Order #:* ${order.orderNumber}\n\n` +
+    `${customerInfo}\n\n` +
+    `*Items:*\n${itemsList}\n\n` +
+    `*Total Amount:* ₹${(order.amount / 100).toFixed(2)}\n\n` +
+    `✅ Payment confirmed via UPI`
+  );
+}
+
+/**
+ * Open WhatsApp chat with pre-filled message for order notification
+ */
+export function sendOrderNotificationWhatsApp(order: {
+  orderNumber: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  amount: number;
+  items: Array<{ title: string; price: number }>;
+}): void {
+  if (!ADMIN_WHATSAPP) {
+    console.warn("[WHATSAPP] Admin WhatsApp number not configured");
+    return;
+  }
+
+  const message = formatOrderMessage(order);
+  const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${message}`;
+  
+  // Open WhatsApp in a new tab
+  window.open(whatsappUrl, '_blank');
+}
+
+/**
+ * Open WhatsApp chat for customer support
+ */
+export function openCustomerSupportWhatsApp(message?: string): void {
+  const defaultMessage = encodeURIComponent("Hi, I need help with my order.");
+  const msg = message || defaultMessage;
+  
+  if (!ADMIN_WHATSAPP) {
+    console.warn("[WHATSAPP] Admin WhatsApp number not configured");
+    return;
+  }
+
+  const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${msg}`;
+  window.open(whatsappUrl, '_blank');
+}
