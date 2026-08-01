@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { invalidateProducts } from "@/lib/cache";
 
 async function togglePublish(formData: FormData) {
   "use server";
@@ -22,6 +23,7 @@ async function deleteProduct(formData: FormData) {
   
   // Now delete the product
   await db.product.delete({ where: { id } });
+  invalidateProducts();
   revalidatePath("/admin/products");
 }
 
