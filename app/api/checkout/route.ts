@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { invalidateOrders } from "@/lib/cache";
 
 const CheckoutSchema = z.object({
   productIds: z.array(z.string()).min(1),
@@ -71,6 +72,8 @@ export async function POST(req: NextRequest) {
         items: { create: products.map((p) => ({ productId: p.id, price: p.price })) },
       },
     });
+
+    invalidateOrders();
 
     return NextResponse.json({
       orderId: order.id,

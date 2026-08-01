@@ -1,37 +1,56 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
-import { invalidateProducts } from "@/lib/cache";
 
-async function togglePublish(formData: FormData) {
-  "use server";
-  const id = formData.get("id") as string;
-  const published = formData.get("published") === "true";
-  await db.product.update({ where: { id }, data: { published: !published } });
-  revalidatePath("/admin/products");
-}
+type Product = {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  discountPct: number;
+  thumbnailUrl: string;
+  published: boolean;
+  category: { name: string };
+};
 
-async function deleteProduct(formData: FormData) {
-  "use server";
-  const id = formData.get("id") as string;
-  
-  // Delete related OrderItems first to avoid foreign key constraint violation
-  await db.orderItem.deleteMany({
-    where: { productId: id }
-  });
-  
-  // Now delete the product
-  await db.product.delete({ where: { id } });
-  invalidateProducts();
-  revalidatePath("/admin/products");
-}
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function AdminProductsPage() {
-  const products = await db.product.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { category: true },
-  });
+  async function fetchProducts() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/products");
+      if (!res.ok) throw new Error("Failed to fetch products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  async function togglePublish(id: string, published: boolean) {
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ published: !published }),
+    });
+    if (res.ok) fetchProducts();
+  }
+
+  async function deleteProduct(id: string) {
+    if (!confirm("Delete this product?")) return;
+    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+    if (res.ok) fetchProducts();
+  }
 
   return (
     <div>
@@ -42,7 +61,9 @@ export default async function AdminProductsPage() {
         </Link>
       </div>
 
-      {products.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Loading products...</div>
+      ) : products.length === 0 ? (
         <p className="text-gray-500 text-sm">No products yet. Create one or use CSV import.</p>
       ) : (
         <div className="card overflow-x-auto">
@@ -63,13 +84,13 @@ export default async function AdminProductsPage() {
                     <div className="flex items-center gap-3">
                       <div className="relative w-10 h-12 bg-gray-100 dark:bg-gray-700 rounded shrink-0 overflow-hidden">
                         {p.thumbnailUrl ? (
-                          <Image 
-                            src={p.thumbnailUrl} 
-                            alt={p.title} 
-                            fill 
-                            className="object-cover" 
-                            sizes="40px" 
-                            unoptimized={p.thumbnailUrl.includes('.svg') || p.thumbnailUrl.includes('placehold.co')}
+                          <Image
+                            src={p.thumbnailUrl}
+                            alt={p.title}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                            unoptimized={p.thumbnailUrl.includes(".svg") || p.thumbnailUrl.includes("placehold.co")}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
@@ -100,17 +121,18 @@ export default async function AdminProductsPage() {
                       <Link href={`/admin/products/${p.id}/edit`} className="text-brand-500 hover:underline text-xs">
                         Edit
                       </Link>
-                      <form action={togglePublish}>
-                        <input type="hidden" name="id" value={p.id} />
-                        <input type="hidden" name="published" value={String(p.published)} />
-                        <button className="text-brand-500 hover:underline text-xs">
-                          {p.published ? "Unpublish" : "Publish"}
-                        </button>
-                      </form>
-                      <form action={deleteProduct}>
-                        <input type="hidden" name="id" value={p.id} />
-                        <button className="text-red-600 hover:underline text-xs">Delete</button>
-                      </form>
+                      <button
+                        onClick={() => togglePublish(p.id, p.published)}
+                        className="text-brand-500 hover:underline text-xs"
+                      >
+                        {p.published ? "Unpublish" : "Publish"}
+                      </button>
+                      <button
+                        onClick={() => deleteProduct(p.id)}
+                        className="text-red-600 hover:underline text-xs"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>

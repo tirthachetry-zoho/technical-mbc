@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendEmail, purchaseConfirmationEmail } from "@/lib/email";
+import { invalidateOrders } from "@/lib/cache";
 
 const VerifyManualSchema = z.object({
   orderId: z.string(),
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest) {
       console.error("[EMAIL] Failed to send confirmation:", err);
     }
   }
+
+  invalidateOrders();
 
   return NextResponse.json({ success: true, orderId: updatedOrder.id });
 }

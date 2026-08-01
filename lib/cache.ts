@@ -58,6 +58,28 @@ export function invalidateProducts(): void {
 }
 
 /**
+ * Remove all cached entries whose key starts with "admin:orders".
+ */
+export function invalidateOrders(): void {
+  for (const key of store.keys()) {
+    if (key.startsWith("admin:orders")) {
+      store.delete(key);
+    }
+  }
+}
+
+/**
+ * Remove all cached entries whose key starts with "admin:products".
+ */
+export function invalidateAdminProducts(): void {
+  for (const key of store.keys()) {
+    if (key.startsWith("admin:products")) {
+      store.delete(key);
+    }
+  }
+}
+
+/**
  * Remove all cached entries.
  */
 export function invalidateAll(): void {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { cacheOrFetch } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,39 +15,48 @@ export async function GET(req: NextRequest) {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const [orders, total] = await Promise.all([
-      db.order.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          items: {
+    const cacheKey = `admin:orders:page=${page}:limit=${limit}`;
+
+    const result = await cacheOrFetch(
+      cacheKey,
+      async () => {
+        const [orders, total] = await Promise.all([
+          db.order.findMany({
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
             include: {
-              product: {
-                select: { title: true, slug: true },
+              items: {
+                include: {
+                  product: {
+                    select: { title: true, slug: true },
+                  },
+                },
+              },
+              user: {
+                select: { name: true, email: true },
+              },
+              coupon: {
+                select: { code: true },
               },
             },
+          }),
+          db.order.count(),
+        ]);
+        return {
+          orders,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
           },
-          user: {
-            select: { name: true, email: true },
-          },
-          coupon: {
-            select: { code: true },
-          },
-        },
-      }),
-      db.order.count(),
-    ]);
-
-    return NextResponse.json({
-      orders,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        };
       },
-    });
+      2 * 60 * 1000 // 2 min TTL
+    );
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Admin orders error:", error);
     return NextResponse.json(
