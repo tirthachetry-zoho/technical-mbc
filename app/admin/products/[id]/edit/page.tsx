@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { uploadToR2, getSignedThumbnailUrl } from "@/lib/r2";
+import { uploadToR2, getPublicUrl } from "@/lib/r2";
 import { uploadQueue, shouldQueueFile } from "@/lib/upload-queue";
 import { revalidatePath } from "next/cache";
 import EditProductForm from "@/components/EditProductForm";
@@ -26,7 +26,7 @@ async function updateProduct(formData: FormData) {
   const published = formData.get("published") === "on";
   const pdfFile = formData.get("pdf") as File;
 
-  let finalThumbnailUrl = thumbnailUrl;
+  let finalThumbnailUrl = thumbnailUrl || "";
   let pdfKey = formData.get("existingPdfKey") as string;
 
   // Upload thumbnail file if provided
@@ -35,9 +35,11 @@ async function updateProduct(formData: FormData) {
     try {
       const buffer = Buffer.from(await thumbnailFile.arrayBuffer());
       await uploadToR2(thumbnailKey, buffer, thumbnailFile.type);
-      finalThumbnailUrl = await getSignedThumbnailUrl(thumbnailKey);
-    } catch {
-      // R2 not configured — fallback to URL
+      // Use public URL instead of signed URL for permanent storage
+      finalThumbnailUrl = getPublicUrl(thumbnailKey);
+    } catch (error) {
+      console.error("Thumbnail upload failed:", error);
+      // Continue with provided URL
     }
   }
 
@@ -62,8 +64,9 @@ async function updateProduct(formData: FormData) {
         // Upload small files immediately
         await uploadToR2(pdfKey, buffer, "application/pdf");
       }
-    } catch {
-      // R2 not configured — store key for later upload
+    } catch (error) {
+      console.error("PDF upload failed:", error);
+      throw new Error(`Failed to upload PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 

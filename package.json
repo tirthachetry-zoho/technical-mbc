@@ -8,6 +8,9 @@
     "start": "next start",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -18,7 +21,7 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "next": "15.5.22",
-    "next-auth": "5.0.0-beta.20",
+    "next-auth": "^5.0.0-beta.32",
     "pdf-lib": "^1.17.1",
     "pg": "^8.22.0",
     "qrcode.react": "^4.2.0",
@@ -28,6 +31,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20",

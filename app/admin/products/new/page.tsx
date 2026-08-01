@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { uploadToR2, getSignedThumbnailUrl } from "@/lib/r2";
+import { uploadToR2, getPublicUrl } from "@/lib/r2";
 import { uploadQueue, shouldQueueFile } from "@/lib/upload-queue";
 import PriceCalculator from "@/components/PriceCalculator";
 import { auth } from "@/lib/auth";
@@ -32,7 +32,7 @@ async function createProduct(formData: FormData) {
   let pdfKey = pdfFile && pdfFile.size > 0 
     ? `products/${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}-${Date.now()}.pdf`
     : `products/${slug}-${Date.now()}.pdf`;
-  let finalThumbnailUrl = thumbnailUrl;
+  let finalThumbnailUrl = thumbnailUrl || "";
 
   // Upload thumbnail file if provided
   if (thumbnailFile && thumbnailFile.size > 0) {
@@ -40,15 +40,17 @@ async function createProduct(formData: FormData) {
     try {
       const buffer = Buffer.from(await thumbnailFile.arrayBuffer());
       await uploadToR2(thumbnailKey, buffer, thumbnailFile.type);
-      finalThumbnailUrl = await getSignedThumbnailUrl(thumbnailKey);
-    } catch {
-      // R2 not configured — fallback to URL
+      // Use public URL instead of signed URL for permanent storage
+      finalThumbnailUrl = getPublicUrl(thumbnailKey);
+    } catch (error) {
+      console.error("Thumbnail upload failed:", error);
+      // Continue with provided URL or empty string
     }
   }
 
   // Try uploading PDF to R2; use queue for large files
-  try {
-    if (pdfFile && pdfFile.size > 0) {
+  if (pdfFile && pdfFile.size > 0) {
+    try {
       const buffer = Buffer.from(await pdfFile.arrayBuffer());
       
       if (shouldQueueFile(pdfFile.size)) {
@@ -66,9 +68,15 @@ async function createProduct(formData: FormData) {
         // Upload small files immediately
         await uploadToR2(pdfKey, buffer, "application/pdf");
       }
+    } catch (error) {
+      console.error("PDF upload failed:", error);
+      throw new Error(`Failed to upload PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  } catch {
-    // R2 not configured — store key for later upload
+  }
+
+  // Validate required fields before creating
+  if (!finalThumbnailUrl) {
+    throw new Error("Thumbnail is required. Please provide a thumbnail image URL or upload a thumbnail file.");
   }
 
   await db.product.create({

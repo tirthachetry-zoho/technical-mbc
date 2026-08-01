@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import PriceCalculator from "@/components/PriceCalculator";
 import PdfFileInput from "@/components/PdfFileInput";
 
@@ -28,8 +29,27 @@ export default function EditProductForm({
   categories: { id: string; name: string }[];
   action: (formData: FormData) => Promise<void> | void;
 }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (formData: FormData) => {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await action(formData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      }
+    });
+  };
+
   return (
-    <form action={action} className="card p-6 space-y-4">
+    <form action={handleSubmit} className="card p-6 space-y-4">
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
       <input type="hidden" name="id" value={product.id} />
       <input type="hidden" name="existingPdfKey" value={product.pdfKey} />
       
@@ -106,7 +126,9 @@ export default function EditProductForm({
         </label>
       </div>
       
-      <button className="btn-primary w-full">Update Product</button>
+      <button className="btn-primary w-full" disabled={isPending}>
+        {isPending ? "Updating..." : "Update Product"}
+      </button>
     </form>
   );
 }
