@@ -5,7 +5,7 @@ import { invalidateProducts, invalidateAdminProducts, invalidateOrders } from "@
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -14,7 +14,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     const product = await db.product.update({
       where: { id },
@@ -37,7 +37,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -45,7 +45,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Delete related OrderItems first
     await db.orderItem.deleteMany({ where: { productId: id } });
