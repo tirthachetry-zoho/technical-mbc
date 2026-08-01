@@ -3,3 +3,14 @@ node_modules
 .env
 .env.local
 *.log
+
+# Scripts (local only)
+scripts/
+
+# E2E tests
+e2e/
+playwright.config.ts
+test-results/
+
+# IDE
+.idea/
