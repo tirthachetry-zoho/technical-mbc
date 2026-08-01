@@ -5,7 +5,7 @@ import { uploadQueue, shouldQueueFile } from "@/lib/upload-queue";
 import PriceCalculator from "@/components/PriceCalculator";
 import { auth } from "@/lib/auth";
 import ProductForm from "@/components/ProductForm";
-import { invalidateProducts } from "@/lib/cache";
+import { invalidateProducts, invalidateAdminProducts } from "@/lib/cache";
 
 async function createProduct(formData: FormData) {
   "use server";
@@ -112,6 +112,7 @@ async function createProduct(formData: FormData) {
   });
 
   invalidateProducts();
+  invalidateAdminProducts();
   redirect("/admin/products");
 }
 

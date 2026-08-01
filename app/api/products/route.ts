@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { cacheOrFetch, invalidateProducts } from "@/lib/cache";
+import { cacheOrFetch, invalidateProducts, invalidateAdminProducts } from "@/lib/cache";
 import type { ProductWithCategory } from "@/lib/cache-types";
 
 // GET /api/products?search=&category=
@@ -55,5 +55,6 @@ export async function POST(req: NextRequest) {
   const body = ProductSchema.parse(await req.json());
   const product = await db.product.create({ data: body });
   invalidateProducts();
+  invalidateAdminProducts();
   return NextResponse.json(product, { status: 201 });
 }

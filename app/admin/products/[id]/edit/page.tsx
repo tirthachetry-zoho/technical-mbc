@@ -4,7 +4,7 @@ import { uploadToR2, getPublicUrl } from "@/lib/r2";
 import { uploadQueue, shouldQueueFile } from "@/lib/upload-queue";
 import { revalidatePath } from "next/cache";
 import EditProductForm from "@/components/EditProductForm";
-import { invalidateProducts } from "@/lib/cache";
+import { invalidateProducts, invalidateAdminProducts } from "@/lib/cache";
 
 async function updateProduct(formData: FormData) {
   "use server";
@@ -109,6 +109,7 @@ async function updateProduct(formData: FormData) {
   });
 
   invalidateProducts();
+  invalidateAdminProducts();
   revalidatePath("/admin/products");
   revalidatePath(`/products/${slug}`);
   redirect("/admin/products");
