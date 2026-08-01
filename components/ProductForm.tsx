@@ -55,6 +55,9 @@ export default function ProductForm({
           <input name="thumbnailFile" type="file" accept="image/*" className="w-full text-sm" />
           <p className="text-xs text-gray-500">Or provide URL:</p>
           <input name="thumbnailUrl" placeholder="https://..." className="input-field" />
+          <p className="text-xs text-gray-500">
+            💡 If no thumbnail is provided, the first page of the PDF will be used automatically.
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">

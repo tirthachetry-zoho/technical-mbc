@@ -23,6 +23,7 @@ async function createProduct(formData: FormData) {
   const discountPct = parseInt((formData.get("discountPct") as string) || "0", 10);
   const thumbnailUrl = formData.get("thumbnailUrl") as string;
   const thumbnailFile = formData.get("thumbnailFile") as File;
+  const extractedThumbnail = formData.get("extractedThumbnail") as string;
   const language = (formData.get("language") as string) || "English";
   const pages = parseInt((formData.get("pages") as string) || "0", 10);
   const featured = formData.get("featured") === "on";
@@ -36,15 +37,28 @@ async function createProduct(formData: FormData) {
 
   // Upload thumbnail file if provided
   if (thumbnailFile && thumbnailFile.size > 0) {
-    const thumbnailKey = `thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split('.').pop()}`;
+    const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split('.').pop()}`;
     try {
       const buffer = Buffer.from(await thumbnailFile.arrayBuffer());
       await uploadToR2(thumbnailKey, buffer, thumbnailFile.type);
-      // Use public URL instead of signed URL for permanent storage
       finalThumbnailUrl = getPublicUrl(thumbnailKey);
     } catch (error) {
       console.error("Thumbnail upload failed:", error);
-      // Continue with provided URL or empty string
+    }
+  }
+  
+  // If no thumbnail provided, use extracted thumbnail from PDF first page
+  if (!finalThumbnailUrl && extractedThumbnail && extractedThumbnail.startsWith("data:image")) {
+    try {
+      // Convert data URL to buffer
+      const base64Data = extractedThumbnail.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+      const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.jpeg`;
+      await uploadToR2(thumbnailKey, buffer, "image/jpeg");
+      finalThumbnailUrl = getPublicUrl(thumbnailKey);
+      console.log("Auto-extracted thumbnail from PDF first page uploaded");
+    } catch (error) {
+      console.error("Auto-extracted thumbnail upload failed:", error);
     }
   }
 
