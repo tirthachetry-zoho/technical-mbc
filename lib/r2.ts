@@ -1,54 +1,86 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { createClient } from "@supabase/supabase-js";
+import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
-// Use S3 SDK for both R2 and B2 (both are S3-compatible)
-const useB2 = !!process.env.B2_ACCESS_KEY_ID;
+// Supabase Storage client (for uploads and public URLs)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || "technical-mbc";
+
+// Fallback S3 client for signed download URLs (Supabase Storage also supports S3 protocol)
+// Supabase S3 endpoint: https://<project-ref>.supabase.co/storage/v1/s3
 const s3Client = new S3Client({
-  region: useB2 ? process.env.B2_REGION || "us-east-005" : "auto",
-  endpoint: useB2 ? process.env.B2_ENDPOINT : process.env.R2_ENDPOINT,
+  region: "local",
+  endpoint: `${supabaseUrl}/storage/v1/s3`,
   credentials: {
-    accessKeyId: useB2 ? process.env.B2_ACCESS_KEY_ID! : process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: useB2 ? process.env.B2_SECRET_ACCESS_KEY! : process.env.R2_SECRET_ACCESS_KEY!,
+    accessKeyId: supabaseServiceKey ? "service_role" : "",
+    secretAccessKey: supabaseServiceKey,
   },
+  forcePathStyle: true,
 });
 
-const BUCKET = process.env.B2_BUCKET || process.env.R2_BUCKET!;
-const STORAGE_PUBLIC_URL = process.env.B2_PUBLIC_URL || process.env.R2_PUBLIC_URL || "";
-
-// Admin upload (PDF, thumbnail, preview images)
+/**
+ * Upload a file to Supabase Storage.
+ * Returns the storage key (path within the bucket).
+ */
 export async function uploadToR2(key: string, body: Buffer, contentType: string) {
-  await s3Client.send(
-    new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType })
-  );
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(key, body, {
+      contentType,
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Supabase Storage upload failed for ${key}: ${error.message}`);
+  }
+
   return key;
 }
 
-// Short-lived signed URL, only ever generated server-side after payment is verified
-export async function getSignedDownloadUrl(key: string, expiresInSeconds = 300) {
-  const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-  return getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
-}
-
-// Get signed URL for thumbnails (longer expiry for display purposes)
-export async function getSignedThumbnailUrl(key: string, expiresInSeconds = 3600) {
-  const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-  return getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
-}
-
-// Fetch the raw object body as a Buffer (for watermarking before serving)
-export async function getObjectBuffer(key: string): Promise<Buffer> {
-  const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-  const response = await s3Client.send(command);
-  const chunks: Uint8Array[] = [];
-  // @ts-expect-error - Body is a Readable stream in Node
-  for await (const chunk of response.Body) {
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
-// Export public URL for constructing direct links
+/**
+ * Get the public URL for a file in Supabase Storage.
+ */
 export function getPublicUrl(key: string): string {
-  return `${STORAGE_PUBLIC_URL}/${key}`;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(key);
+  return data.publicUrl;
+}
+
+/**
+ * Short-lived signed URL for downloads (only generated server-side after payment is verified).
+ * Uses Supabase Storage's signed URL feature.
+ */
+export async function getSignedDownloadUrl(key: string, expiresInSeconds = 300) {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(key, expiresInSeconds);
+
+  if (error || !data) {
+    throw new Error(`Failed to create signed URL for ${key}: ${error?.message}`);
+  }
+
+  return data.signedUrl;
+}
+
+/**
+ * Signed URL for thumbnails (longer expiry for display purposes).
+ */
+export async function getSignedThumbnailUrl(key: string, expiresInSeconds = 3600) {
+  return getSignedDownloadUrl(key, expiresInSeconds);
+}
+
+/**
+ * Fetch the raw object body as a Buffer (for watermarking before serving).
+ */
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+  const { data, error } = await supabase.storage.from(BUCKET).download(key);
+
+  if (error || !data) {
+    throw new Error(`Failed to download ${key} from Supabase Storage: ${error?.message}`);
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
