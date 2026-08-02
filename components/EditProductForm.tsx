@@ -53,17 +53,23 @@ export default function EditProductForm({
       )}
       <input type="hidden" name="id" value={product.id} />
       <input type="hidden" name="existingPdfKey" value={product.pdfKey} />
-      
+
       <div>
         <label className="block text-sm font-medium mb-1">Title</label>
         <input name="title" defaultValue={product.title} required className="input-field" />
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium mb-1">Slug</label>
-        <input name="slug" defaultValue={product.slug} className="input-field" />
+        <input
+          name="slug"
+          value={product.slug}
+          disabled
+          className="input-field bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+        />
+        <p className="text-xs text-gray-500 mt-1">Slug is auto-generated from title and cannot be edited</p>
       </div>
-      
+
       <div>
         <label className="block text-sm font-medium mb-1">Description</label>
         <textarea name="description" defaultValue={product.description} required rows={4} className="input-field" />

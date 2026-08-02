@@ -12,7 +12,7 @@ async function updateProduct(formData: FormData) {
 
   const id = formData.get("id") as string;
   const title = formData.get("title") as string;
-  const slug = formData.get("slug") as string || title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+  const slug = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
   const description = formData.get("description") as string;
   const categoryId = formData.get("categoryId") as string;
   const price = Math.round(parseFloat(formData.get("price") as string) * 100);
