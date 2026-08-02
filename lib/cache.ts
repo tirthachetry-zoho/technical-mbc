@@ -80,6 +80,17 @@ export function invalidateAdminProducts(): void {
 }
 
 /**
+ * Remove all cached entries whose key starts with "category".
+ */
+export function invalidateCategories(): void {
+  for (const key of store.keys()) {
+    if (key.startsWith("category")) {
+      store.delete(key);
+    }
+  }
+}
+
+/**
  * Remove all cached entries.
  */
 export function invalidateAll(): void {

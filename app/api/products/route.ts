@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const cacheKey = `product:api:search=${search ?? ""}:cat=${category ?? ""}`;
 
-  const products = await cacheOrFetch<ProductWithCategory[]>(cacheKey, () =>
+  const products = await cacheOrFetch(cacheKey, () =>
     db.product.findMany({
       where: {
         published: true,
@@ -25,7 +25,23 @@ export async function GET(req: NextRequest) {
         }),
         ...(category && { category: { slug: category } }),
       },
-      include: { category: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        price: true,
+        discountPct: true,
+        thumbnailUrl: true,
+        featured: true,
+        bestSeller: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     })
   );

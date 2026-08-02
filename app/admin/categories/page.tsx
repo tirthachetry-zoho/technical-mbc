@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { invalidateCategories, invalidateProducts } from "@/lib/cache";
 
 async function createCategory(formData: FormData) {
   "use server";
@@ -12,6 +13,8 @@ async function createCategory(formData: FormData) {
     data: { name, slug },
   });
 
+  invalidateCategories();
+  invalidateProducts();
   revalidatePath("/admin/categories");
   redirect("/admin/categories");
 }
@@ -20,6 +23,8 @@ async function deleteCategory(formData: FormData) {
   "use server";
   const id = formData.get("id") as string;
   await db.category.delete({ where: { id } });
+  invalidateCategories();
+  invalidateProducts();
   revalidatePath("/admin/categories");
 }
 

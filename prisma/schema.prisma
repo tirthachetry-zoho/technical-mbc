@@ -53,6 +53,14 @@ model Product {
   wishlist       Wishlist[]
 
   @@index([categoryId])
+  @@index([published])
+  @@index([createdAt])
+  @@index([price])
+  @@index([featured])
+  @@index([bestSeller])
+  @@index([published, createdAt])
+  @@index([published, bestSeller])
+  @@index([published, featured])
 }
 
 model Coupon {

@@ -48,11 +48,31 @@ export default async function ProductPage({ params }: Props) {
   // Related products from same category
   const relatedCacheKey = `product:related:${product.categoryId}:${product.id}`;
 
-  const related = await cacheOrFetch<ProductWithCategory[]>(relatedCacheKey, () =>
+  const related = await cacheOrFetch(relatedCacheKey, () =>
     db.product.findMany({
-      where: { published: true, categoryId: product.categoryId, id: { not: product.id } },
+      where: { 
+        published: true, 
+        categoryId: product.categoryId, 
+        id: { not: product.id } 
+      },
       take: 4,
-      include: { category: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        price: true,
+        discountPct: true,
+        thumbnailUrl: true,
+        featured: true,
+        bestSeller: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
     })
   );
 
