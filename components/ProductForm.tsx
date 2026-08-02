@@ -74,6 +74,17 @@ export default function ProductForm({
         <label className="block text-sm font-medium mb-1">PDF File</label>
         <PdfFileInput name="pdf" className="w-full text-sm" />
       </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Custom UPI ID (Optional)</label>
+        <input 
+          name="customUpiId" 
+          placeholder="e.g., name@upi" 
+          className="input-field" 
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Leave empty to use default UPI ID from environment
+        </p>
+      </div>
       <div className="flex gap-4">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="featured" className="rounded" />

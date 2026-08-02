@@ -40,6 +40,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "One or more products unavailable" }, { status: 400 });
     }
 
+    // Get custom UPI ID from the first product (for single product checkout)
+    const customUpiId = products[0]?.customUpiId || null;
+
     let amount = products.reduce((sum, p) => sum + Math.round(p.price * (1 - p.discountPct / 100)), 0);
 
     let coupon = null;
@@ -78,6 +81,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       orderId: order.id,
       amount,
+      customUpiId,
     });
   } catch (error) {
     console.error("Checkout error:", error);

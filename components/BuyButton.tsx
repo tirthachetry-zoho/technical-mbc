@@ -24,7 +24,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [upiId] = useState(process.env.NEXT_PUBLIC_UPI_ID || "topersnotes@upi");
+  const [customUpiId, setCustomUpiId] = useState<string | null>(null);
   const [payeeName] = useState(process.env.NEXT_PUBLIC_PAYEE_NAME || "ToppersNotes");
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
@@ -33,6 +33,9 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
   const isLoggedIn = !!session?.user;
   const router = useRouter();
   const { showToast } = useToast();
+
+  // Use custom UPI ID if available, otherwise use default from environment
+  const upiId = customUpiId || process.env.NEXT_PUBLIC_UPI_ID || "topersnotes@upi";
 
   // UPI deep link for the QR code
   const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${price}&cu=INR&tn=${encodeURIComponent(title)}`;
@@ -92,6 +95,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
       const data = await createOrder();
       if (!data) return;
       setOrderId(data.orderId);
+      setCustomUpiId(data.customUpiId || null);
       setShowQR(true);
       setShowGuestForm(false);
     } catch (err) {

@@ -25,6 +25,7 @@ export default function EditProductForm({
     featured: boolean;
     bestSeller: boolean;
     published: boolean;
+    customUpiId?: string | null;
   };
   categories: { id: string; name: string }[];
   action: (formData: FormData) => Promise<void> | void;
@@ -109,6 +110,19 @@ export default function EditProductForm({
         <label className="block text-sm font-medium mb-1">PDF File</label>
         <PdfFileInput name="pdf" className="w-full text-sm" />
         <p className="text-xs text-gray-500">Current: {product.pdfKey}</p>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Custom UPI ID (Optional)</label>
+        <input 
+          name="customUpiId" 
+          defaultValue={product.customUpiId || ""}
+          placeholder="e.g., name@upi" 
+          className="input-field" 
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Leave empty to use default UPI ID from environment
+        </p>
       </div>
       
       <div className="flex gap-4">

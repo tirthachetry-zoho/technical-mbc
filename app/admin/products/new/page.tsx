@@ -29,6 +29,7 @@ async function createProduct(formData: FormData) {
   const pages = parseInt((formData.get("pages") as string) || "0", 10);
   const featured = formData.get("featured") === "on";
   const bestSeller = formData.get("bestSeller") === "on";
+  const customUpiId = (formData.get("customUpiId") as string)?.trim() || null;
   const pdfFile = formData.get("pdf") as File;
 
   let pdfKey = pdfFile && pdfFile.size > 0
@@ -105,6 +106,7 @@ async function createProduct(formData: FormData) {
       pages,
       featured,
       bestSeller,
+      customUpiId,
       published: true,
     },
   });

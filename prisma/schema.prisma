@@ -45,6 +45,7 @@ model Product {
   published      Boolean     @default(false)
   seoTitle       String?
   seoDescription String?
+  customUpiId    String?
   createdAt      DateTime    @default(now())
   orderItems     OrderItem[]
   category       Category    @relation(fields: [categoryId], references: [id])

@@ -26,6 +26,7 @@ async function updateProduct(formData: FormData) {
   const featured = formData.get("featured") === "on";
   const bestSeller = formData.get("bestSeller") === "on";
   const published = formData.get("published") === "on";
+  const customUpiId = (formData.get("customUpiId") as string)?.trim() || null;
   const pdfFile = formData.get("pdf") as File;
 
   let finalThumbnailUrl = thumbnailUrl || "";
@@ -104,6 +105,7 @@ async function updateProduct(formData: FormData) {
       featured,
       bestSeller,
       published,
+      customUpiId,
     },
   });
 
