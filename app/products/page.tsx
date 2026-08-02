@@ -4,6 +4,8 @@ import SortDropdown from "@/components/SortDropdown";
 import { cacheOrFetch } from "@/lib/cache";
 import type { ProductWithCategory } from "@/lib/cache-types";
 
+export const revalidate = 300; // Revalidate products listing every 5 minutes
+
 export default async function ProductsPage({
   searchParams,
 }: {
@@ -59,7 +61,7 @@ export default async function ProductsPage({
       </div>
 
       {/* Category filter pills */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" aria-label="Filter by category">
         <a
           href="/products"
           className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition ${

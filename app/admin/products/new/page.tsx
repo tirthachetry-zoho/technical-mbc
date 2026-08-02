@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { uploadToR2, getPublicUrl } from "@/lib/r2";
@@ -30,14 +31,14 @@ async function createProduct(formData: FormData) {
   const bestSeller = formData.get("bestSeller") === "on";
   const pdfFile = formData.get("pdf") as File;
 
-  let pdfKey = pdfFile && pdfFile.size > 0 
-    ? `products/${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}-${Date.now()}.pdf`
+  let pdfKey = pdfFile && pdfFile.size > 0
+    ? `products/${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}-${Date.now()}.pdf`
     : `products/${slug}-${Date.now()}.pdf`;
   let finalThumbnailUrl = thumbnailUrl || "";
 
   // Upload thumbnail file if provided
   if (thumbnailFile && thumbnailFile.size > 0) {
-    const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split('.').pop()}`;
+    const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split(".").pop()}`;
     try {
       const buffer = Buffer.from(await thumbnailFile.arrayBuffer());
       await uploadToR2(thumbnailKey, buffer, thumbnailFile.type);
@@ -46,11 +47,10 @@ async function createProduct(formData: FormData) {
       console.error("Thumbnail upload failed:", error);
     }
   }
-  
+
   // If no thumbnail provided, use extracted thumbnail from PDF first page
   if (!finalThumbnailUrl && extractedThumbnail && extractedThumbnail.startsWith("data:image")) {
     try {
-      // Convert data URL to buffer
       const base64Data = extractedThumbnail.split(",")[1];
       const buffer = Buffer.from(base64Data, "base64");
       const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.jpeg`;
@@ -66,9 +66,8 @@ async function createProduct(formData: FormData) {
   if (pdfFile && pdfFile.size > 0) {
     try {
       const buffer = Buffer.from(await pdfFile.arrayBuffer());
-      
+
       if (shouldQueueFile(pdfFile.size)) {
-        // Queue large file upload
         await uploadQueue.addToQueue({
           id: crypto.randomUUID(),
           fileName: pdfFile.name,
@@ -79,7 +78,6 @@ async function createProduct(formData: FormData) {
         });
         console.log(`Large file queued for upload: ${pdfFile.name} (${(pdfFile.size / 1024 / 1024).toFixed(2)}MB)`);
       } else {
-        // Upload small files immediately
         await uploadToR2(pdfKey, buffer, "application/pdf");
       }
     } catch (error) {
@@ -120,8 +118,13 @@ export default async function NewProductPage() {
   const categories = await db.category.findMany();
 
   return (
-    <div className="max-w-lg">
-      <h1 className="text-xl font-bold mb-4">New Product</h1>
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">New Product</h1>
+        <Link href="/admin/products" className="text-sm text-gray-500 hover:text-brand-500">
+          ← Back to Products
+        </Link>
+      </div>
       <ProductForm categories={categories} action={createProduct} />
     </div>
   );

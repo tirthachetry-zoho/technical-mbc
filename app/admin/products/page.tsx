@@ -47,40 +47,46 @@ export default function AdminProductsPage() {
   }
 
   async function deleteProduct(id: string) {
-    if (!confirm("Delete this product?")) return;
+    if (!confirm("Delete this product? This action cannot be undone.")) return;
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (res.ok) fetchProducts();
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Products ({products.length})</h1>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Products</h1>
         <Link href="/admin/products/new" className="btn-primary text-sm">
           + New Product
         </Link>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading products...</div>
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+          Loading products...
+        </div>
       ) : products.length === 0 ? (
-        <p className="text-gray-500 text-sm">No products yet. Create one or use CSV import.</p>
+        <div className="card p-8 text-center text-gray-500 dark:text-gray-400">
+          <p className="text-lg mb-1">No products yet.</p>
+          <p className="text-sm">Create one or use CSV import.</p>
+        </div>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left border-b border-gray-200 dark:border-gray-700">
-                <th className="py-2 px-3">Product</th>
-                <th className="px-3">Category</th>
-                <th className="px-3">Price</th>
-                <th className="px-3">Status</th>
-                <th className="px-3">Actions</th>
+              <tr className="text-left border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                <th className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Product</th>
+                <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Category</th>
+                <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Price</th>
+                <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Status</th>
+                <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Actions</th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p.id} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-2 px-3">
+                <tr key={p.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                  <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <div className="relative w-10 h-12 bg-gray-100 dark:bg-gray-700 rounded shrink-0 overflow-hidden">
                         {p.thumbnailUrl ? (
@@ -100,7 +106,7 @@ export default function AdminProductsPage() {
                       </div>
                       <div>
                         <p className="font-medium">{p.title}</p>
-                        <p className="text-xs text-gray-500">{p.slug}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{p.slug}</p>
                       </div>
                     </div>
                   </td>
@@ -112,24 +118,33 @@ export default function AdminProductsPage() {
                     )}
                   </td>
                   <td className="px-3">
-                    <span className={`badge ${p.published ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"}`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        p.published
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                      }`}
+                    >
                       {p.published ? "Published" : "Draft"}
                     </span>
                   </td>
                   <td className="px-3">
-                    <div className="flex gap-3">
-                      <Link href={`/admin/products/${p.id}/edit`} className="text-brand-500 hover:underline text-xs">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/products/${p.id}/edit`}
+                        className="text-brand-500 hover:text-brand-600 text-xs font-medium"
+                      >
                         Edit
                       </Link>
                       <button
                         onClick={() => togglePublish(p.id, p.published)}
-                        className="text-brand-500 hover:underline text-xs"
+                        className="text-brand-500 hover:text-brand-600 text-xs font-medium"
                       >
                         {p.published ? "Unpublish" : "Publish"}
                       </button>
                       <button
                         onClick={() => deleteProduct(p.id)}
-                        className="text-red-600 hover:underline text-xs"
+                        className="text-red-600 hover:text-red-700 text-xs font-medium"
                       >
                         Delete
                       </button>

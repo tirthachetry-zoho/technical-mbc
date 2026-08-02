@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -33,39 +34,53 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-8">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">Admin Login</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Login to access the admin panel</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-brand-500 font-bold text-xl mb-4">
+            <span>←</span>
+            Back to Store
+          </Link>
+          <h1 className="text-3xl font-bold mb-2">Admin Login</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Login to access the admin panel
+          </p>
+        </div>
+        <div className="card p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-field"
+                required
+              />
+            </div>
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+            <button disabled={loading} className="btn-primary w-full">
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
-          <input
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input-field"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input-field"
-            required
-          />
-        </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button disabled={loading} className="btn-primary w-full">
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { sendOrderNotificationWhatsApp } from "@/lib/whatsapp";
+import { useToast } from "@/components/Toast";
 
 declare global {
   interface Window {
@@ -22,7 +23,8 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
   const [showQR, setShowQR] = useState(false);
   const [showGuestForm, setShowGuestForm] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [upiId] = useState(process.env.NEXT_PUBLIC_UPI_ID || "toppersnotes@upi");
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [upiId] = useState(process.env.NEXT_PUBLIC_UPI_ID || "topersnotes@upi");
   const [payeeName] = useState(process.env.NEXT_PUBLIC_PAYEE_NAME || "ToppersNotes");
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
@@ -30,10 +32,32 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const router = useRouter();
+  const { showToast } = useToast();
+
+  // UPI deep link for the QR code
+  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${price}&cu=INR&tn=${encodeURIComponent(title)}`;
+
+  // Lazy-load QR code library only when needed, then generate
+  const generateQR = useCallback(async (link: string) => {
+    try {
+      const QRCode = (await import("qrcode")).default;
+      const dataUrl = await QRCode.toDataURL(link, { width: 200, margin: 1 });
+      setQrDataUrl(dataUrl);
+    } catch {
+      setQrDataUrl(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showQR) {
+      setQrDataUrl(null);
+      generateQR(upiLink);
+    }
+  }, [showQR, upiLink, generateQR]);
 
   async function createOrder() {
-    const body: any = { productIds: [productId] };
-    
+    const body: Record<string, unknown> = { productIds: [productId] };
+
     // Add guest details if not logged in
     if (!isLoggedIn) {
       body.guestEmail = guestEmail;
@@ -41,16 +65,11 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
       body.guestName = guestName;
     }
 
-    console.log("Creating order with body:", body);
-
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-
-    console.log("Response status:", res.status);
-    console.log("Response headers:", res.headers);
 
     if (res.status === 401) {
       router.push("/login");
@@ -58,8 +77,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
     }
 
     const text = await res.text();
-    console.log("Response text:", text);
-
     if (!text) {
       throw new Error("Empty response from server");
     }
@@ -78,7 +95,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
       setShowQR(true);
       setShowGuestForm(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Something went wrong");
+      showToast(err instanceof Error ? err.message : "Something went wrong", "error");
     } finally {
       setLoading(false);
     }
@@ -90,18 +107,12 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
 
   async function submitGuestDetails() {
     if (!guestEmail || !guestName || !guestPhone) {
-      alert("Please fill in all required fields");
+      showToast("Please fill in all required fields", "error");
       return;
     }
     // Create order and show QR code directly
     await handleQRPay();
   }
-
-  // UPI deep link for the QR code
-  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${price}&cu=INR&tn=${encodeURIComponent(title)}`;
-  
-  // Use static QR code image from public folder
-  const qrCodeImageUrl = "/qr-code.jpeg";
 
   async function confirmManualPayment() {
     if (!orderId) return;
@@ -112,12 +123,12 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId }),
       });
-      
+
       const text = await res.text();
       if (!text) {
         throw new Error("Empty response from server");
       }
-      
+
       const data = JSON.parse(text);
       if (res.ok) {
         // Fetch order details for WhatsApp notification
@@ -126,15 +137,15 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
           const orderData = await orderRes.json();
           sendOrderNotificationWhatsApp(orderData);
         }
-        
-        alert("Payment confirmed! Your downloads are ready. Check your email for details.");
+
+        showToast("Payment confirmed! Your downloads are ready.", "success");
         // Redirect to public download page (works for both guests and logged-in users)
         window.location.href = `/download/${orderId}`;
       } else {
-        alert(data.error || "Payment not confirmed yet. Please contact support.");
+        showToast(data.error || "Payment not confirmed yet. Please contact support.", "error");
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to verify payment. Please contact support.");
+      showToast(err instanceof Error ? err.message : "Failed to verify payment. Please contact support.", "error");
     } finally {
       setLoading(false);
     }
@@ -152,7 +163,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
                 type="text"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                className="input"
+                className="input-field"
                 placeholder="Enter your name"
                 required
               />
@@ -163,7 +174,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
                 type="email"
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
-                className="input"
+                className="input-field"
                 placeholder="your@email.com"
                 required
               />
@@ -174,7 +185,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
                 type="tel"
                 value={guestPhone}
                 onChange={(e) => setGuestPhone(e.target.value)}
-                className="input"
+                className="input-field"
                 placeholder="+91 98765 43210"
                 required
               />
@@ -208,14 +219,20 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
             Scan this QR with any UPI app (GPay, PhonePe, Paytm, etc.)
           </p>
           <div className="flex justify-center mb-4">
-            <div className="bg-white p-4 rounded-xl">
-              <img
-                src={qrCodeImageUrl}
-                alt="UPI QR Code"
-                width={200}
-                height={200}
-                className="rounded-lg"
-              />
+            <div className="bg-white p-4 rounded-xl shadow-inner">
+              {qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt="UPI QR Code"
+                  width={200}
+                  height={200}
+                  className="rounded-lg"
+                />
+              ) : (
+                <div className="w-[200px] h-[200px] flex items-center justify-center text-gray-400">
+                  <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
+                </div>
+              )}
             </div>
           </div>
           <div className="space-y-1 text-sm">
@@ -249,9 +266,9 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
     <>
       <div className="flex-1 space-y-2">
         <button
-          onClick={handleGuestCheckout}
+          onClick={isLoggedIn ? handleQRPay : handleGuestCheckout}
           disabled={loading}
-          className="w-full bg-brand-500 text-white py-3 rounded-lg font-medium hover:bg-brand-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="btn-primary w-full"
         >
           {loading ? (
             <>

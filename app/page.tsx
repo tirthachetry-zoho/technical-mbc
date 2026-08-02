@@ -67,20 +67,23 @@ export default async function HomePage() {
       {/* Categories */}
       {categories.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold mb-4">Shop by Category</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Shop by Category</h2>
+            <Link href="/products" className="text-sm text-brand-500 hover:underline">View all →</Link>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {categories.map((c) => (
               <Link
                 key={c.id}
                 href={`/products?category=${c.slug}`}
-                className="card p-4 text-center hover:border-brand-500 transition"
+                className="card p-4 text-center hover:border-brand-500 transition group"
               >
-                <div className="w-12 h-12 mx-auto mb-2 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto mb-2 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <p className="font-medium text-sm">{c.name}</p>
+                <p className="font-medium text-sm line-clamp-1">{c.name}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{c._count.products} notes</p>
               </Link>
             ))}

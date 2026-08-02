@@ -11,6 +11,8 @@ import type { ProductWithReviews, ProductWithCategory } from "@/lib/cache-types"
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const revalidate = 300; // Revalidate product detail every 5 minutes
+
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const product = await db.product.findUnique({
@@ -18,7 +20,7 @@ export async function generateMetadata({ params }: Props) {
   });
   if (!product) return { title: "Product not found" };
   return {
-    title: product.seoTitle || `${product.title} — ToppersNotes`,
+    title: product.seoTitle || `${product.title} — TechnicalMBC`,
     description: product.seoDescription || product.description.slice(0, 160),
   };
 }
@@ -120,7 +122,7 @@ export default async function ProductPage({ params }: Props) {
         </div>
 
         {/* Details */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
             <Link href={`/products?category=${product.category.slug}`} className="text-sm text-brand-500 font-medium">
               {product.category.name}
@@ -138,7 +140,7 @@ export default async function ProductPage({ params }: Props) {
             )}
           </div>
 
-          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{product.description}</p>
+          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">{product.description}</p>
 
           {/* Specs */}
           <div className="grid grid-cols-3 gap-3 py-4 border-y border-gray-200 dark:border-gray-700">
@@ -157,7 +159,7 @@ export default async function ProductPage({ params }: Props) {
           </div>
 
           {/* Buy + Wishlist */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <BuyButton productId={product.id} price={finalPrice} title={product.title} />
             <WishlistButton productId={product.id} />
           </div>

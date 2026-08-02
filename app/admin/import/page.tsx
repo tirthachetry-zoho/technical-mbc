@@ -111,11 +111,11 @@ export default async function AdminImportPage({
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-xl font-bold">CSV Import</h1>
+      <h1 className="text-2xl font-bold">CSV Import</h1>
 
       {result && (
-        <div className="card p-4 bg-brand-50 dark:bg-brand-900/30 border-brand-200 dark:border-brand-800">
-          <p className="text-sm">{result}</p>
+        <div className="card p-4 bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800">
+          <p className="text-sm text-brand-700 dark:text-brand-300">{result}</p>
         </div>
       )}
 
@@ -142,7 +142,7 @@ export default async function AdminImportPage({
         </div>
 
         <form action={importCSV} className="space-y-3">
-          <input name="csv" type="file" accept=".csv" required className="w-full" />
+          <input name="csv" type="file" accept=".csv" required className="w-full text-sm" />
           <button className="btn-primary">Import Products</button>
         </form>
 

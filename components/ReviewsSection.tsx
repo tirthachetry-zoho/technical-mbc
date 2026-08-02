@@ -77,13 +77,24 @@ export default function ReviewsSection({ productId }: { productId: string }) {
             </div>
           )}
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="text-sm text-brand-500 hover:underline">
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="text-sm text-brand-500 hover:underline"
+        >
           {showForm ? "Cancel" : "Write a review"}
         </button>
       </div>
 
       {message && (
-        <p className={`text-sm ${message.includes("submitted") ? "text-green-600" : "text-red-600"}`}>{message}</p>
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            message.includes("submitted")
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {message}
+        </div>
       )}
 
       {showForm && (

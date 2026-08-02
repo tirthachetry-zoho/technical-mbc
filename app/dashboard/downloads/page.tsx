@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 
 type FileEntry = {
   title: string;
@@ -50,13 +51,19 @@ function DownloadsContent() {
 
   if (!orderId) return <p>No order selected.</p>;
   if (error) return <p className="text-red-600">{error}</p>;
-  if (!files) return <p>Loading your download links…</p>;
+  if (!files)
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+        <p className="text-gray-500 dark:text-gray-400">Loading your download links…</p>
+      </div>
+    );
 
   return (
     <div className="max-w-2xl space-y-4">
       <h1 className="text-2xl font-bold">Your Downloads</h1>
-      <div className="card p-4 bg-brand-50 dark:bg-brand-900/30 border-brand-200 dark:border-brand-800">
-        <p className="text-sm">
+      <div className="card p-4 bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-800">
+        <p className="text-sm text-brand-700 dark:text-brand-300">
           {remaining !== null && remaining > 0
             ? `⚠️ ${remaining} downloads remaining for this order. Links expire in 5 minutes.`
             : "⚠️ This is your last download for this order."}

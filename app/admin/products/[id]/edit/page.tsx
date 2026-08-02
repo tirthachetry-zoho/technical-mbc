@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { uploadToR2, getPublicUrl } from "@/lib/r2";
@@ -32,7 +33,7 @@ async function updateProduct(formData: FormData) {
 
   // Upload thumbnail file if provided
   if (thumbnailFile && thumbnailFile.size > 0) {
-    const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split('.').pop()}`;
+    const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split(".").pop()}`;
     try {
       const buffer = Buffer.from(await thumbnailFile.arrayBuffer());
       await uploadToR2(thumbnailKey, buffer, thumbnailFile.type);
@@ -41,7 +42,7 @@ async function updateProduct(formData: FormData) {
       console.error("Thumbnail upload failed:", error);
     }
   }
-  
+
   // If no thumbnail provided and new PDF uploaded, use extracted thumbnail from PDF first page
   if (!finalThumbnailUrl && extractedThumbnail && extractedThumbnail.startsWith("data:image")) {
     try {
@@ -55,7 +56,7 @@ async function updateProduct(formData: FormData) {
       console.error("Auto-extracted thumbnail upload failed:", error);
     }
   }
-  
+
   // If still no thumbnail, keep existing one
   if (!finalThumbnailUrl) {
     finalThumbnailUrl = (await db.product.findUnique({ where: { id } }))?.thumbnailUrl || "";
@@ -63,12 +64,11 @@ async function updateProduct(formData: FormData) {
 
   // Upload PDF if provided
   if (pdfFile && pdfFile.size > 0) {
-    pdfKey = `products/${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}-${Date.now()}.pdf`;
+    pdfKey = `products/${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}-${Date.now()}.pdf`;
     try {
       const buffer = Buffer.from(await pdfFile.arrayBuffer());
-      
+
       if (shouldQueueFile(pdfFile.size)) {
-        // Queue large file upload
         await uploadQueue.addToQueue({
           id: crypto.randomUUID(),
           fileName: pdfFile.name,
@@ -79,7 +79,6 @@ async function updateProduct(formData: FormData) {
         });
         console.log(`Large file queued for upload: ${pdfFile.name} (${(pdfFile.size / 1024 / 1024).toFixed(2)}MB)`);
       } else {
-        // Upload small files immediately
         await uploadToR2(pdfKey, buffer, "application/pdf");
       }
     } catch (error) {
@@ -123,18 +122,30 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   });
 
   if (!product) {
-    return <div className="text-red-600">Product not found</div>;
+    return (
+      <div className="card p-8 text-center text-red-600">
+        <p className="font-bold">Product not found</p>
+        <Link href="/admin/products" className="text-brand-500 hover:underline text-sm mt-2 inline-block">
+          ← Back to Products
+        </Link>
+      </div>
+    );
   }
 
   const categories = await db.category.findMany();
 
   return (
-    <div className="max-w-lg">
-      <h1 className="text-xl font-bold mb-4">Edit Product</h1>
-      <EditProductForm 
-        product={product} 
-        categories={categories} 
-        action={updateProduct} 
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Edit Product</h1>
+        <Link href="/admin/products" className="text-sm text-gray-500 hover:text-brand-500">
+          ← Back to Products
+        </Link>
+      </div>
+      <EditProductForm
+        product={product}
+        categories={categories}
+        action={updateProduct}
       />
     </div>
   );

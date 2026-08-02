@@ -43,20 +43,55 @@ export default function WishlistPage() {
     setItems(items.filter((i) => i.product.id !== productId));
   }
 
-  if (loading) return <p className="text-gray-500">Loading your wishlist…</p>;
-  if (error) return <p className="text-gray-500">{error}</p>;
+  if (loading)
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+        <p className="text-gray-500 dark:text-gray-400">Loading your wishlist…</p>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
+        <Link href="/login" className="btn-primary inline-block">
+          Login
+        </Link>
+      </div>
+    );
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">My Wishlist</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">My Wishlist</h1>
+        {items.length > 0 && (
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </span>
+        )}
+      </div>
 
       {items.length === 0 ? (
         <div className="text-center py-16">
-          <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          <svg
+            className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
           </svg>
-          <p className="text-gray-500 dark:text-gray-400 text-lg">Your wishlist is empty.</p>
-          <Link href="/products" className="text-brand-500 hover:underline mt-2 inline-block">
+          <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">Your wishlist is empty.</p>
+          <Link
+            href="/products"
+            className="text-brand-500 hover:underline inline-flex items-center gap-1"
+          >
             Browse notes →
           </Link>
         </div>
@@ -69,14 +104,26 @@ export default function WishlistPage() {
               <div key={item.id} className="card group">
                 <div className="relative aspect-[4/5] bg-gray-100 dark:bg-gray-700 overflow-hidden">
                   <Link href={`/products/${p.slug}`}>
-                    <Image src={p.thumbnailUrl} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" sizes="300px" />
+                    <Image
+                      src={p.thumbnailUrl}
+                      alt={p.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="300px"
+                    />
                   </Link>
                   <button
                     onClick={() => removeItem(p.id)}
                     className="absolute top-2 right-2 w-8 h-8 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow hover:bg-red-50 dark:hover:bg-red-900 transition"
                     aria-label="Remove from wishlist"
                   >
-                    <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg
+                      className="w-4 h-4 text-red-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
@@ -88,7 +135,9 @@ export default function WishlistPage() {
                   </Link>
                   <div className="flex items-center gap-2 mt-2">
                     <span className="font-bold">₹{finalPrice}</span>
-                    {p.discountPct > 0 && <span className="text-xs text-gray-400 line-through">₹{p.price / 100}</span>}
+                    {p.discountPct > 0 && (
+                      <span className="text-xs text-gray-400 line-through">₹{p.price / 100}</span>
+                    )}
                   </div>
                 </div>
               </div>

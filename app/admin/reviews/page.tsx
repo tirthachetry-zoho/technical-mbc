@@ -32,13 +32,15 @@ export default async function AdminReviewsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-xl font-bold">Reviews</h1>
+      <h1 className="text-2xl font-bold">Reviews</h1>
 
       {/* Pending reviews */}
       <section>
         <h2 className="text-lg font-semibold mb-3">Pending Approval ({pending.length})</h2>
         {pending.length === 0 ? (
-          <p className="text-gray-500 text-sm">No pending reviews.</p>
+          <div className="card p-6 text-center text-gray-500 dark:text-gray-400">
+            <p>No pending reviews.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {pending.map((r) => (
@@ -55,11 +57,11 @@ export default async function AdminReviewsPage() {
                   <div className="flex gap-2 shrink-0">
                     <form action={approveReview}>
                       <input type="hidden" name="id" value={r.id} />
-                      <button className="text-green-600 hover:underline text-sm">Approve</button>
+                      <button className="text-green-600 hover:text-green-700 text-sm font-medium">Approve</button>
                     </form>
                     <form action={deleteReview}>
                       <input type="hidden" name="id" value={r.id} />
-                      <button className="text-red-600 hover:underline text-sm">Delete</button>
+                      <button className="text-red-600 hover:text-red-700 text-sm font-medium">Delete</button>
                     </form>
                   </div>
                 </div>
@@ -73,7 +75,9 @@ export default async function AdminReviewsPage() {
       <section>
         <h2 className="text-lg font-semibold mb-3">Approved Reviews</h2>
         {approved.length === 0 ? (
-          <p className="text-gray-500 text-sm">No approved reviews yet.</p>
+          <div className="card p-6 text-center text-gray-500 dark:text-gray-400">
+            <p>No approved reviews yet.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {approved.map((r) => (
@@ -89,7 +93,7 @@ export default async function AdminReviewsPage() {
                   </div>
                   <form action={deleteReview}>
                     <input type="hidden" name="id" value={r.id} />
-                    <button className="text-red-600 hover:underline text-sm">Delete</button>
+                    <button className="text-red-600 hover:text-red-700 text-sm font-medium">Delete</button>
                   </form>
                 </div>
               </div>

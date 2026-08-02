@@ -5,8 +5,11 @@ import SearchBar from "@/components/SearchBar";
 import AuthNav from "@/components/AuthNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import MobileNav from "@/components/MobileNav";
+import BackToTop from "@/components/BackToTop";
 import { db } from "@/lib/db";
+import { cacheOrFetch } from "@/lib/cache";
 import Providers from "@/components/providers";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "TechnicalMBC — Premium PDF Notes for Competitive Exams",
@@ -15,8 +18,12 @@ export const metadata = {
   keywords: ["PDF notes", "competitive exams", "RRB", "SSC", "UPSC", "banking", "study material"],
 };
 
+export const revalidate = 3600; // Cache layout categories for 1 hour
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const categories = await db.category.findMany({ orderBy: { name: "asc" }, take: 8 });
+  const categories = await cacheOrFetch("layout:categories", () =>
+    db.category.findMany({ orderBy: { name: "asc" }, take: 8 })
+  );
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -30,17 +37,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen flex flex-col">
         <Providers>
         {/* Header */}
-        <header className="border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-50">
+        <header className="border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-50">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center gap-2 md:gap-4 py-3">
-              <Link href="/" className="flex items-center gap-2 font-bold text-lg text-brand-500 shrink-0">
-                <svg className="w-6 h-6 md:w-7 md:h-7" fill="currentColor" viewBox="0 0 24 24">
+              <Link href="/" className="flex items-center gap-2 font-bold text-lg text-brand-500 shrink-0" aria-label="TechnicalMBC home">
+                <svg className="w-6 h-6 md:w-7 md:h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M6 2h9a2 2 0 012 2v1h1a2 2 0 012 2v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm9 4H6v14h12V7a1 1 0 00-1-1h-2v1a1 1 0 01-1 1h-1a1 1 0 01-1-1V6z" />
                 </svg>
                 <span className="hidden sm:inline">TechnicalMBC</span>
               </Link>
               <div className="flex-1 min-w-0">
-                <SearchBar />
+                <Suspense fallback={<div className="h-9 max-w-md w-full bg-gray-100 dark:bg-gray-800 rounded-full" />}>
+                  <SearchBar />
+                </Suspense>
               </div>
               <nav className="flex items-center gap-1 text-sm shrink-0">
                 <MobileNav />
@@ -53,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
             {/* Category bar */}
             {categories.length > 0 && (
-              <nav className="flex items-center gap-1 pb-2 overflow-x-auto text-sm scrollbar-hide">
+              <nav className="flex items-center gap-1 pb-2 overflow-x-auto text-sm scrollbar-hide" aria-label="Categories">
                 {categories.map((c) => (
                   <Link
                     key={c.id}
@@ -126,6 +135,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         </footer>
         <WhatsAppFloat />
+        <BackToTop />
         </Providers>
       </body>
     </html>
