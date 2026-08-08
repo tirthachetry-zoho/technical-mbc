@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { sendEmail, purchaseConfirmationEmail } from "@/lib/email";
 import { invalidateOrders } from "@/lib/cache";
 
@@ -9,6 +10,17 @@ const VerifyManualSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Require authentication
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Only admins can manually verify payments
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
+  }
+
   const { orderId } = VerifyManualSchema.parse(await req.json());
 
   const order = await db.order.findUnique({

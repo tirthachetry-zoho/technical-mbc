@@ -24,3 +24,27 @@ export function verifyRazorpaySignature(orderId: string, paymentId: string, sign
     .digest("hex");
   return expected === signature;
 }
+
+// Create Razorpay QR code for payment
+export async function createRazorpayQRCode(amount: number, orderId: string, customerName?: string, customerEmail?: string) {
+  try {
+    const qrCode: any = await razorpay.qrCode.create({
+      type: "upi_qr",
+      name: "TechnicalMBC",
+      description: `Payment for order ${orderId}`,
+      usage: "single_use",
+      fixed_amount: true,
+      payment_amount: amount * 100, // Convert to paise
+      notes: {
+        orderId: orderId,
+        customerName: customerName || "Guest",
+        customerEmail: customerEmail || "",
+        amount: amount.toString(),
+      },
+    } as any);
+    return qrCode;
+  } catch (error) {
+    console.error("Error creating Razorpay QR code:", error);
+    throw error;
+  }
+}

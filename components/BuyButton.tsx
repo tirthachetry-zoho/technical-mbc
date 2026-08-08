@@ -195,6 +195,8 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
         },
         prefill: {
           name: session?.user?.name || guestName,
+          email: session?.user?.email || guestEmail,
+          contact: guestPhone,
         },
         theme: {
           color: "#3B82F6",
@@ -214,12 +216,12 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
         error: { code: string; description: string; source: string; step: string };
       }) {
         showToast(`Payment failed: ${response.error.description}`, "error");
+        setLoading(false);
       });
       rzp.open();
       setShowGuestForm(false);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Something went wrong", "error");
-    } finally {
       setLoading(false);
     }
   }
@@ -236,7 +238,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
     // Create order and initiate Razorpay payment
     await handleRazorpayPayment();
   }
-
 
   if (showGuestForm) {
     return (
