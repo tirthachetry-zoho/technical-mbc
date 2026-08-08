@@ -6,9 +6,43 @@ import { useSession } from "next-auth/react";
 import { sendOrderNotificationWhatsApp } from "@/lib/whatsapp";
 import { useToast } from "@/components/Toast";
 
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayResponse) => void;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  notes?: Record<string, string>;
+  theme: {
+    color: string;
+  };
+  modal: {
+    ondismiss?: () => void;
+    escape?: boolean;
+    backdropclose?: boolean;
+  };
+}
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
 declare global {
   interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
+    Razorpay: new (options: RazorpayOptions) => { 
+      open: () => void; 
+      close: () => void;
+      on: (event: string, handler: (response: any) => void) => void;
+    };
   }
 }
 
@@ -20,43 +54,50 @@ type BuyButtonProps = {
 
 export default function BuyButton({ productId, price, title }: BuyButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [showQR, setShowQR] = useState(false);
   const [showGuestForm, setShowGuestForm] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [customUpiId, setCustomUpiId] = useState<string | null>(null);
-  const [payeeName] = useState(process.env.NEXT_PUBLIC_PAYEE_NAME || "ToppersNotes");
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const router = useRouter();
   const { showToast } = useToast();
 
-  // Use custom UPI ID if available, otherwise use default from environment
-  const upiId = customUpiId || process.env.NEXT_PUBLIC_UPI_ID || "topersnotes@upi";
-
-  // UPI deep link for the QR code
-  const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${price}&cu=INR&tn=${encodeURIComponent(title)}`;
-
-  // Lazy-load QR code library only when needed, then generate
-  const generateQR = useCallback(async (link: string) => {
-    try {
-      const QRCode = (await import("qrcode")).default;
-      const dataUrl = await QRCode.toDataURL(link, { width: 200, margin: 1 });
-      setQrDataUrl(dataUrl);
-    } catch {
-      setQrDataUrl(null);
-    }
-  }, []);
-
+  // Load Razorpay script
   useEffect(() => {
-    if (showQR) {
-      setQrDataUrl(null);
-      generateQR(upiLink);
+    // Check if Razorpay is already loaded
+    if (window.Razorpay) {
+      setRazorpayLoaded(true);
+      return;
     }
-  }, [showQR, upiLink, generateQR]);
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    
+    script.onload = () => {
+      if (window.Razorpay) {
+        setRazorpayLoaded(true);
+      } else {
+        console.error("Razorpay script loaded but window.Razorpay not available");
+        setRazorpayLoaded(false);
+      }
+    };
+    
+    script.onerror = () => {
+      console.error("Failed to load Razorpay script");
+      setRazorpayLoaded(false);
+    };
+    
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   async function createOrder() {
     const body: Record<string, unknown> = { productIds: [productId] };
@@ -89,14 +130,89 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
     return data;
   }
 
-  async function handleQRPay() {
+  async function handleRazorpayPayment() {
     setLoading(true);
     try {
+      // Check if Razorpay is loaded
+      if (!razorpayLoaded || !window.Razorpay) {
+        showToast("Payment gateway is loading. Please try again in a moment.", "error");
+        setLoading(false);
+        return;
+      }
+
       const data = await createOrder();
       if (!data) return;
-      setOrderId(data.orderId);
-      setCustomUpiId(data.customUpiId || null);
-      setShowQR(true);
+
+      const options: RazorpayOptions = {
+        key: data.razorpayKey,
+        amount: Math.round(data.amount * 100), // Razorpay expects amount in paise
+        currency: "INR",
+        name: "TechnicalMBC",
+        description: title,
+        order_id: data.razorpayOrderId,
+        notes: {
+          orderId: data.orderId,
+          productName: title,
+          customerName: session?.user?.name || guestName || "Guest",
+        },
+        handler: async function (response: RazorpayResponse) {
+          // Verify payment on server
+          const verifyRes = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: data.orderId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+
+          const verifyData = await verifyRes.json();
+          if (verifyRes.ok) {
+            // Fetch order details for WhatsApp notification
+            const orderRes = await fetch(`/api/orders/${data.orderId}`);
+            if (orderRes.ok) {
+              const orderData = await orderRes.json();
+              sendOrderNotificationWhatsApp({
+                orderNumber: orderData.orderNumber,
+                guestName: orderData.guestName,
+                guestEmail: orderData.guestEmail,
+                guestPhone: orderData.guestPhone,
+                amount: orderData.amount,
+                items: orderData.items.map((item: any) => ({ title: item.product.title, price: item.price })),
+              });
+            }
+
+            showToast("Payment successful! Your downloads are ready.", "success");
+            window.location.href = `/download/${data.orderId}`;
+          } else {
+            showToast(verifyData.error || "Payment verification failed", "error");
+          }
+        },
+        prefill: {
+          name: session?.user?.name || guestName,
+        },
+        theme: {
+          color: "#3B82F6",
+        },
+        modal: {
+          ondismiss: function() {
+            setLoading(false);
+            showToast("Payment cancelled", "info");
+          },
+          escape: true,
+          backdropclose: false,
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response: {
+        error: { code: string; description: string; source: string; step: string };
+      }) {
+        showToast(`Payment failed: ${response.error.description}`, "error");
+      });
+      rzp.open();
       setShowGuestForm(false);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Something went wrong", "error");
@@ -114,46 +230,10 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
       showToast("Please fill in all required fields", "error");
       return;
     }
-    // Create order and show QR code directly
-    await handleQRPay();
+    // Create order and initiate Razorpay payment
+    await handleRazorpayPayment();
   }
 
-  async function confirmManualPayment() {
-    if (!orderId) return;
-    setLoading(true);
-    try {
-      const res = await fetch("/api/payments/verify-manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-
-      const text = await res.text();
-      if (!text) {
-        throw new Error("Empty response from server");
-      }
-
-      const data = JSON.parse(text);
-      if (res.ok) {
-        // Fetch order details for WhatsApp notification
-        const orderRes = await fetch(`/api/orders/${orderId}`);
-        if (orderRes.ok) {
-          const orderData = await orderRes.json();
-          sendOrderNotificationWhatsApp(orderData);
-        }
-
-        showToast("Payment confirmed! Your downloads are ready.", "success");
-        // Redirect to public download page (works for both guests and logged-in users)
-        window.location.href = `/download/${orderId}`;
-      } else {
-        showToast(data.error || "Payment not confirmed yet. Please contact support.", "error");
-      }
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to verify payment. Please contact support.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (showGuestForm) {
     return (
@@ -214,63 +294,12 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
     );
   }
 
-  if (showQR && orderId) {
-    return (
-      <div className="space-y-4">
-        <div className="card p-6 text-center">
-          <h3 className="font-bold text-lg mb-2">Scan & Pay with UPI</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Scan this QR with any UPI app (GPay, PhonePe, Paytm, etc.)
-          </p>
-          <div className="flex justify-center mb-4">
-            <div className="bg-white p-4 rounded-xl shadow-inner">
-              {qrDataUrl ? (
-                <img
-                  src={qrDataUrl}
-                  alt="UPI QR Code"
-                  width={200}
-                  height={200}
-                  className="rounded-lg"
-                />
-              ) : (
-                <div className="w-[200px] h-[200px] flex items-center justify-center text-gray-400">
-                  <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full"></div>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="space-y-1 text-sm">
-            <p className="font-medium">Amount: ₹{price}</p>
-            <p className="text-gray-500 dark:text-gray-400">UPI ID: {upiId}</p>
-          </div>
-          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-xs text-amber-700 dark:text-amber-300">
-            ⚠️ After paying, click "I've Paid" below. Your order will be verified manually.
-          </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={confirmManualPayment}
-              disabled={loading}
-              className="btn-primary flex-1"
-            >
-              {loading ? "Verifying..." : "✓ I've Paid"}
-            </button>
-            <button
-              onClick={() => { setShowQR(false); setOrderId(null); }}
-              className="btn-outline"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
       <div className="flex-1 space-y-2">
         <button
-          onClick={isLoggedIn ? handleQRPay : handleGuestCheckout}
+          onClick={isLoggedIn ? handleRazorpayPayment : handleGuestCheckout}
           disabled={loading}
           className="btn-primary w-full"
         >
@@ -285,9 +314,9 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
           ) : (
             <>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0-1h9m-9 0H3m6.5 7.5L12 21l2.5-2.5M3 12h3m12 0h3M12 3v3m0 0h3m-3 0H9m6 6h.01M9 12h.01M12 9h.01" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
-              Buy Now with UPI
+              Buy Now
             </>
           )}
         </button>

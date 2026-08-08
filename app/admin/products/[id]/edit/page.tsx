@@ -26,7 +26,12 @@ async function updateProduct(formData: FormData) {
   const featured = formData.get("featured") === "on";
   const bestSeller = formData.get("bestSeller") === "on";
   const published = formData.get("published") === "on";
-  const customUpiId = (formData.get("customUpiId") as string)?.trim() || null;
+  const razorpayAccountId = (formData.get("razorpayAccountId") as string)?.trim();
+  
+  if (!razorpayAccountId) {
+    throw new Error("Razorpay account is required");
+  }
+  
   const pdfFile = formData.get("pdf") as File;
 
   let finalThumbnailUrl = thumbnailUrl || "";
@@ -34,6 +39,15 @@ async function updateProduct(formData: FormData) {
 
   // Upload thumbnail file if provided
   if (thumbnailFile && thumbnailFile.size > 0) {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(thumbnailFile.type)) {
+      throw new Error("Invalid file type. Only JPEG, PNG, and WebP are allowed.");
+    }
+    // Validate file size (max 5MB)
+    if (thumbnailFile.size > 5 * 1024 * 1024) {
+      throw new Error("File too large. Maximum size is 5MB.");
+    }
     const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.${thumbnailFile.name.split(".").pop()}`;
     try {
       const buffer = Buffer.from(await thumbnailFile.arrayBuffer());
@@ -41,6 +55,7 @@ async function updateProduct(formData: FormData) {
       finalThumbnailUrl = getPublicUrl(thumbnailKey);
     } catch (error) {
       console.error("Thumbnail upload failed:", error);
+      throw new Error("Failed to upload thumbnail");
     }
   }
 
@@ -65,6 +80,14 @@ async function updateProduct(formData: FormData) {
 
   // Upload PDF if provided
   if (pdfFile && pdfFile.size > 0) {
+    // Validate file type
+    if (pdfFile.type !== "application/pdf") {
+      throw new Error("Invalid file type. Only PDF files are allowed.");
+    }
+    // Validate file size (max 50MB)
+    if (pdfFile.size > 50 * 1024 * 1024) {
+      throw new Error("PDF file too large. Maximum size is 50MB.");
+    }
     pdfKey = `products/${pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}-${Date.now()}.pdf`;
     try {
       const buffer = Buffer.from(await pdfFile.arrayBuffer());
@@ -84,7 +107,7 @@ async function updateProduct(formData: FormData) {
       }
     } catch (error) {
       console.error("PDF upload failed:", error);
-      throw new Error(`Failed to upload PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error("Failed to upload PDF");
     }
   }
 
@@ -105,7 +128,7 @@ async function updateProduct(formData: FormData) {
       featured,
       bestSeller,
       published,
-      customUpiId,
+      razorpayAccountId,
     },
   });
 
@@ -135,6 +158,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   }
 
   const categories = await db.category.findMany();
+  const razorpayAccounts = await db.razorpayAccount.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, isActive: true, isDefault: true }
+  });
 
   return (
     <div className="max-w-2xl">
@@ -147,6 +174,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       <EditProductForm
         product={product}
         categories={categories}
+        razorpayAccounts={razorpayAccounts}
         action={updateProduct}
       />
     </div>

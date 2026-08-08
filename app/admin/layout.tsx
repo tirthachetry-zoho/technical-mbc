@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: "📦" },
   { href: "/admin/categories", label: "Categories", icon: "📁" },
   { href: "/admin/coupons", label: "Coupons", icon: "🏷️" },
+  { href: "/admin/razorpay-accounts", label: "Razorpay Accounts", icon: "💳" },
   { href: "/admin/reviews", label: "Reviews", icon: "⭐" },
   { href: "/admin/import", label: "CSV Import", icon: "📥" },
 ];

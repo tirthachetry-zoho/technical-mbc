@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { invalidateOrders } from "@/lib/cache";
+import { razorpay, getRazorpayInstance } from "@/lib/razorpay";
 
 const CheckoutSchema = z.object({
   productIds: z.array(z.string()).min(1),
@@ -35,15 +36,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Login required or guest email required" }, { status: 401 });
     }
 
-    const products = await db.product.findMany({ where: { id: { in: productIds }, published: true } });
+    const products = await db.product.findMany({ 
+      where: { id: { in: productIds }, published: true },
+      include: { razorpayAccount: true }
+    });
     if (products.length !== productIds.length) {
       return NextResponse.json({ error: "One or more products unavailable" }, { status: 400 });
     }
 
-    // Get custom UPI ID from the first product (for single product checkout)
-    const customUpiId = products[0]?.customUpiId || null;
+    // Get Razorpay account from the first product (for single product checkout)
+    const razorpayAccount = products[0]?.razorpayAccount || null;
 
-    let amount = products.reduce((sum, p) => sum + Math.round(p.price * (1 - p.discountPct / 100)), 0);
+    // Calculate amount in rupees (price is stored in paise in database)
+    let amount = products.reduce((sum, p) => {
+      const discountedPrice = Math.round(p.price * (1 - p.discountPct / 100));
+      return sum + (discountedPrice / 100); // Convert paise to rupees
+    }, 0);
 
     let coupon = null;
     if (couponCode) {
@@ -57,10 +65,31 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Order below coupon minimum" }, { status: 400 });
 
       amount = coupon.type === "FLAT" ? amount - coupon.value : Math.round(amount * (1 - coupon.value / 100));
-      amount = Math.max(amount, 100); // never go below ₹1
+      amount = Math.max(amount, 1); // never go below ₹1
     }
 
     const orderNumber = `ORD-${Date.now()}`;
+
+    // Get customer details for Razorpay
+    const customerName = session?.user?.name || guestName;
+    const customerEmail = session?.user?.email || guestEmail;
+    const customerPhone = guestPhone;
+
+    // Create Razorpay order using the product's configured account or default
+    const razorpayInstance = razorpayAccount 
+      ? getRazorpayInstance(razorpayAccount.keyId, razorpayAccount.keySecret)
+      : razorpay;
+
+    const razorpayOrder = await razorpayInstance.orders.create({
+      amount: Math.round(amount * 100), // Razorpay expects amount in paise
+      currency: "INR",
+      receipt: orderNumber,
+      notes: {
+        orderId: orderNumber,
+        customerName: customerName || "Guest",
+        customerEmail: customerEmail || "",
+      },
+    });
 
     const order = await db.order.create({
       data: {
@@ -70,7 +99,8 @@ export async function POST(req: NextRequest) {
         guestPhone: session?.user ? undefined : guestPhone,
         guestName: session?.user ? undefined : guestName,
         amount,
-        paymentMethod: "upi_manual",
+        paymentMethod: "razorpay",
+        razorpayOrderId: razorpayOrder.id,
         couponId: coupon?.id,
         items: { create: products.map((p) => ({ productId: p.id, price: p.price })) },
       },
@@ -81,12 +111,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       orderId: order.id,
       amount,
-      customUpiId,
+      razorpayOrderId: razorpayOrder.id,
+      razorpayKey: razorpayAccount?.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     });
   } catch (error) {
     console.error("Checkout error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Checkout failed" },
+      { error: "Checkout failed. Please try again." },
       { status: 500 }
     );
   }

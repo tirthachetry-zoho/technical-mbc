@@ -4,11 +4,12 @@ import { useState, useTransition } from "react";
 import PriceCalculator from "@/components/PriceCalculator";
 import PdfFileInput from "@/components/PdfFileInput";
 
-export default function EditProductForm({ 
+export default function EditProductForm({
   product,
   categories,
+  razorpayAccounts,
   action
-}: { 
+}: {
   product: {
     id: string;
     title: string;
@@ -25,13 +26,17 @@ export default function EditProductForm({
     featured: boolean;
     bestSeller: boolean;
     published: boolean;
-    customUpiId?: string | null;
+    razorpayAccountId?: string | null;
   };
   categories: { id: string; name: string }[];
+  razorpayAccounts?: { id: string; name: string; isActive: boolean; isDefault: boolean }[];
   action: (formData: FormData) => Promise<void> | void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // Find default Razorpay account
+  const defaultAccount = razorpayAccounts?.find(acc => acc.isDefault);
 
   const handleSubmit = (formData: FormData) => {
     setError(null);
@@ -117,20 +122,23 @@ export default function EditProductForm({
         <PdfFileInput name="pdf" className="w-full text-sm" />
         <p className="text-xs text-gray-500">Current: {product.pdfKey}</p>
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-1">Custom UPI ID (Optional)</label>
-        <input 
-          name="customUpiId" 
-          defaultValue={product.customUpiId || ""}
-          placeholder="e.g., name@upi" 
-          className="input-field" 
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Leave empty to use default UPI ID from environment
-        </p>
-      </div>
-      
+
+      {razorpayAccounts && razorpayAccounts.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Razorpay Account *</label>
+          <select name="razorpayAccountId" defaultValue={product.razorpayAccountId || defaultAccount?.id || ""} required className="input-field">
+            {razorpayAccounts.filter((acc) => acc.isActive).map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.name} {acc.isDefault && "(Default)"}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Select the Razorpay account for payments
+          </p>
+        </div>
+      )}
+
       <div className="flex gap-4">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="featured" defaultChecked={product.featured} className="rounded" />

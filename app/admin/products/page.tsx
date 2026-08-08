@@ -13,6 +13,11 @@ type Product = {
   thumbnailUrl: string;
   published: boolean;
   category: { name: string };
+  razorpayAccount?: {
+    id: string;
+    name: string;
+    isDefault: boolean;
+  };
 };
 
 export default function AdminProductsPage() {
@@ -79,6 +84,7 @@ export default function AdminProductsPage() {
                 <th className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Product</th>
                 <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Category</th>
                 <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Price</th>
+                <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Razorpay Account</th>
                 <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Status</th>
                 <th className="px-3 font-medium text-gray-900 dark:text-gray-100">Actions</th>
               </tr>
@@ -115,6 +121,18 @@ export default function AdminProductsPage() {
                     <span className="font-medium">₹{p.price / 100}</span>
                     {p.discountPct > 0 && (
                       <span className="text-xs text-red-500 ml-1">({p.discountPct}% off)</span>
+                    )}
+                  </td>
+                  <td className="px-3">
+                    {p.razorpayAccount ? (
+                      <span className="text-xs">
+                        {p.razorpayAccount.name}
+                        {p.razorpayAccount.isDefault && (
+                          <span className="ml-1 text-blue-500">(Default)</span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Default</span>
                     )}
                   </td>
                   <td className="px-3">

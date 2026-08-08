@@ -27,30 +27,31 @@ model Category {
 }
 
 model Product {
-  id             String      @id @default(cuid())
-  title          String
-  slug           String      @unique
-  description    String
-  categoryId     String
-  price          Int
-  discountPct    Int         @default(0)
-  thumbnailUrl   String
-  previewImages  String[]    @default([])
-  pdfKey         String
-  language       String      @default("English")
-  pages          Int         @default(0)
-  fileSizeMb     Float       @default(0)
-  featured       Boolean     @default(false)
-  bestSeller     Boolean     @default(false)
-  published      Boolean     @default(false)
-  seoTitle       String?
-  seoDescription String?
-  customUpiId    String?
-  createdAt      DateTime    @default(now())
-  orderItems     OrderItem[]
-  category       Category    @relation(fields: [categoryId], references: [id])
-  reviews        Review[]
-  wishlist       Wishlist[]
+  id               String           @id @default(cuid())
+  title            String
+  slug             String           @unique
+  description      String
+  categoryId       String
+  price            Int
+  discountPct      Int              @default(0)
+  thumbnailUrl     String
+  previewImages    String[]         @default([])
+  pdfKey           String
+  language         String           @default("English")
+  pages            Int              @default(0)
+  fileSizeMb       Float            @default(0)
+  featured         Boolean          @default(false)
+  bestSeller       Boolean          @default(false)
+  published        Boolean          @default(false)
+  seoTitle         String?
+  seoDescription   String?
+  razorpayAccountId String?
+  createdAt        DateTime         @default(now())
+  orderItems       OrderItem[]
+  category         Category         @relation(fields: [categoryId], references: [id])
+  reviews          Review[]
+  wishlist         Wishlist[]
+  razorpayAccount  RazorpayAccount? @relation(fields: [razorpayAccountId], references: [id])
 
   @@index([categoryId])
   @@index([published])
@@ -133,6 +134,17 @@ model Setting {
   siteName     String  @default("PDF Store")
   supportEmail String  @default("support@example.com")
   whatsapp     String?
+}
+
+model RazorpayAccount {
+  id          String   @id @default(cuid())
+  name        String
+  keyId       String
+  keySecret   String
+  isActive    Boolean  @default(true)
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  products    Product[]
 }
 
 model Wishlist {

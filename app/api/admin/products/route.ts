@@ -15,7 +15,16 @@ export async function GET(req: NextRequest) {
       async () => {
         return db.product.findMany({
           orderBy: { createdAt: "desc" },
-          include: { category: true },
+          include: { 
+            category: true,
+            razorpayAccount: {
+              select: {
+                id: true,
+                name: true,
+                isDefault: true,
+              }
+            }
+          },
         });
       },
       2 * 60 * 1000 // 2 min TTL

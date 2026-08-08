@@ -9,14 +9,14 @@ const ADMIN_WHATSAPP = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "";
  */
 export function formatOrderMessage(order: {
   orderNumber: string;
-  guestName?: string;
-  guestEmail?: string;
-  guestPhone?: string;
+  guestName?: string | null;
+  guestEmail?: string | null;
+  guestPhone?: string | null;
   amount: number;
   items: Array<{ title: string; price: number }>;
 }): string {
   const customerInfo = order.guestName 
-    ? `*Customer:* ${order.guestName}\n*Email:* ${order.guestEmail}\n*Phone:* ${order.guestPhone || 'N/A'}`
+    ? `*Customer:* ${order.guestName}\n*Email:* ${order.guestEmail || 'N/A'}\n*Phone:* ${order.guestPhone || 'N/A'}`
     : `*Email:* ${order.guestEmail || 'N/A'}`;
 
   const itemsList = order.items
@@ -38,9 +38,9 @@ export function formatOrderMessage(order: {
  */
 export function sendOrderNotificationWhatsApp(order: {
   orderNumber: string;
-  guestName?: string;
-  guestEmail?: string;
-  guestPhone?: string;
+  guestName?: string | null;
+  guestEmail?: string | null;
+  guestPhone?: string | null;
   amount: number;
   items: Array<{ title: string; price: number }>;
 }): void {
