@@ -169,6 +169,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
           });
 
           const verifyData = await verifyRes.json();
+          
           if (verifyRes.ok) {
             // Fetch order details for WhatsApp notification
             const orderRes = await fetch(`/api/orders/${data.orderId}`);
@@ -180,12 +181,14 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
                 guestEmail: orderData.guestEmail,
                 guestPhone: orderData.guestPhone,
                 amount: orderData.amount,
-                items: orderData.items.map((item: any) => ({ title: item.product.title, price: item.price })),
+                items: orderData.items.map((item: any) => ({ title: item.title, price: item.price })),
               });
             }
 
             showToast("Payment successful! Your downloads are ready.", "success");
-            window.location.href = `/download/${data.orderId}`;
+            setTimeout(() => {
+              window.location.href = `/download/${data.orderId}`;
+            }, 1000);
           } else {
             showToast(verifyData.error || "Payment verification failed", "error");
           }

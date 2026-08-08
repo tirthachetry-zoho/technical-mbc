@@ -34,7 +34,27 @@ export function formatOrderMessage(order: {
 }
 
 /**
- * Open WhatsApp chat with pre-filled message for order notification
+ * Get WhatsApp URL for order notification (server-safe)
+ */
+export function getOrderNotificationWhatsAppUrl(order: {
+  orderNumber: string;
+  guestName?: string | null;
+  guestEmail?: string | null;
+  guestPhone?: string | null;
+  amount: number;
+  items: Array<{ title: string; price: number }>;
+}): string | null {
+  if (!ADMIN_WHATSAPP) {
+    console.warn("[WHATSAPP] Admin WhatsApp number not configured");
+    return null;
+  }
+
+  const message = formatOrderMessage(order);
+  return `https://wa.me/${ADMIN_WHATSAPP}?text=${message}`;
+}
+
+/**
+ * Open WhatsApp chat with pre-filled message for order notification (client-side only)
  */
 export function sendOrderNotificationWhatsApp(order: {
   orderNumber: string;
@@ -44,20 +64,14 @@ export function sendOrderNotificationWhatsApp(order: {
   amount: number;
   items: Array<{ title: string; price: number }>;
 }): void {
-  if (!ADMIN_WHATSAPP) {
-    console.warn("[WHATSAPP] Admin WhatsApp number not configured");
-    return;
+  const whatsappUrl = getOrderNotificationWhatsAppUrl(order);
+  if (whatsappUrl && typeof window !== 'undefined') {
+    window.open(whatsappUrl, '_blank');
   }
-
-  const message = formatOrderMessage(order);
-  const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${message}`;
-  
-  // Open WhatsApp in a new tab
-  window.open(whatsappUrl, '_blank');
 }
 
 /**
- * Open WhatsApp chat for customer support
+ * Open WhatsApp chat for customer support (client-side only)
  */
 export function openCustomerSupportWhatsApp(message?: string): void {
   const defaultMessage = encodeURIComponent("Hi, I need help with my order.");
@@ -69,5 +83,7 @@ export function openCustomerSupportWhatsApp(message?: string): void {
   }
 
   const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${msg}`;
-  window.open(whatsappUrl, '_blank');
+  if (typeof window !== 'undefined') {
+    window.open(whatsappUrl, '_blank');
+  }
 }

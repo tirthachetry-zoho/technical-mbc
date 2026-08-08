@@ -67,7 +67,6 @@ async function updateProduct(formData: FormData) {
       const thumbnailKey = `products/thumbnails/${slug}-${Date.now()}.jpeg`;
       await uploadToR2(thumbnailKey, buffer, "image/jpeg");
       finalThumbnailUrl = getPublicUrl(thumbnailKey);
-      console.log("Auto-extracted thumbnail from PDF first page uploaded");
     } catch (error) {
       console.error("Auto-extracted thumbnail upload failed:", error);
     }
@@ -101,7 +100,6 @@ async function updateProduct(formData: FormData) {
           fileData: buffer,
           key: pdfKey,
         });
-        console.log(`Large file queued for upload: ${pdfFile.name} (${(pdfFile.size / 1024 / 1024).toFixed(2)}MB)`);
       } else {
         await uploadToR2(pdfKey, buffer, "application/pdf");
       }

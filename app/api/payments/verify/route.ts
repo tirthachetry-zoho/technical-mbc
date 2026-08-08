@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { verifyRazorpaySignature } from "@/lib/razorpay";
 import { sendEmail, purchaseConfirmationEmail } from "@/lib/email";
-import { sendOrderNotificationWhatsApp } from "@/lib/whatsapp";
+import { getOrderNotificationWhatsAppUrl } from "@/lib/whatsapp";
 
 const VerifySchema = z.object({
   orderId: z.string(), // our internal order id
@@ -86,9 +86,9 @@ export async function POST(req: NextRequest) {
     console.error("[EMAIL] Failed to send confirmation:", err);
   }
 
-  // Send WhatsApp notification
+  // Send WhatsApp notification (log URL for server-side, client will handle opening)
   try {
-    await sendOrderNotificationWhatsApp({
+    const whatsappUrl = getOrderNotificationWhatsAppUrl({
       orderNumber: updatedOrder.orderNumber,
       guestName: updatedOrder.guestName,
       guestEmail: updatedOrder.guestEmail,
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       items: updatedOrder.items.map((item) => ({ title: item.product.title, price: item.price })),
     });
   } catch (err) {
-    console.error("[WHATSAPP] Failed to send notification:", err);
+    console.error("[WHATSAPP] Failed to generate notification URL:", err);
   }
 
   return NextResponse.json({ success: true, orderId: updatedOrder.id });
