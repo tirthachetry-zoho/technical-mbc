@@ -76,8 +76,8 @@ export default function DisclaimerPage() {
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
               If you have any questions about this disclaimer, please contact us at{" "}
-              <a href="mailto:tirthachetri12@gmail.com" className="text-brand-500 hover:underline">
-                tirthachetri12@gmail.com
+              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className="text-brand-500 hover:underline">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}
               </a>.
             </p>
           </section>

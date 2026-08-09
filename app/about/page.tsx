@@ -52,12 +52,12 @@ export default function AboutPage() {
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
               Have questions? We're here to help! Reach out to us via email at{" "}
-              <a href="mailto:tirthachetri12@gmail.com" className="text-brand-500 hover:underline">
-                tirthachetri12@gmail.com
+              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className="text-brand-500 hover:underline">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}
               </a>{" "}
               or connect with us on WhatsApp at{" "}
-              <a href="https://wa.me/917086831426" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
-                +91 70868 31426
+              <a href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
+                +91 {process.env.NEXT_PUBLIC_ADMIN_WHATSAPP?.slice(-10, -8)} {process.env.NEXT_PUBLIC_ADMIN_WHATSAPP?.slice(-8, -5)} {process.env.NEXT_PUBLIC_ADMIN_WHATSAPP?.slice(-5)}
               </a>.
             </p>
           </section>
