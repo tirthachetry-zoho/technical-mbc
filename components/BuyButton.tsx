@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { sendOrderNotificationWhatsApp } from "@/lib/whatsapp";
@@ -27,6 +27,20 @@ interface RazorpayOptions {
     ondismiss?: () => void;
     escape?: boolean;
     backdropclose?: boolean;
+  };
+  config?: {
+    display: {
+      blocks: {
+        banks: {
+          name: string;
+          instruments: string[];
+        };
+      };
+      sequence: string[];
+      preferences: {
+        show_default_blocks: boolean;
+      };
+    };
   };
 }
 
@@ -66,7 +80,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
 
   // Load Razorpay script
   useEffect(() => {
-    // Check if Razorpay is already loaded
     if (window.Razorpay) {
       setRazorpayLoaded(true);
       return;
@@ -133,7 +146,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
   async function handleRazorpayPayment() {
     setLoading(true);
     try {
-      // Check if Razorpay is loaded
       if (!razorpayLoaded || !window.Razorpay) {
         showToast("Payment gateway is loading. Please try again in a moment.", "error");
         setLoading(false);
@@ -145,7 +157,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
 
       const options: RazorpayOptions = {
         key: data.razorpayKey,
-        amount: Math.round(data.amount * 100), // Razorpay expects amount in paise
+        amount: Math.round(data.amount * 100),
         currency: "INR",
         name: "TechnicalMBC",
         description: title,
@@ -156,7 +168,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
           customerName: session?.user?.name || guestName || "Guest",
         },
         handler: async function (response: RazorpayResponse) {
-          // Verify payment on server
           const verifyRes = await fetch("/api/payments/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -171,7 +182,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
           const verifyData = await verifyRes.json();
           
           if (verifyRes.ok) {
-            // Fetch order details for WhatsApp notification
             const orderRes = await fetch(`/api/orders/${data.orderId}`);
             if (orderRes.ok) {
               const orderData = await orderRes.json();
@@ -208,7 +218,7 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
           },
           escape: true,
           backdropclose: false,
-        },
+        }
       };
 
       const rzp = new window.Razorpay(options);
@@ -235,7 +245,6 @@ export default function BuyButton({ productId, price, title }: BuyButtonProps) {
       showToast("Please fill in all required fields", "error");
       return;
     }
-    // Create order and initiate Razorpay payment
     await handleRazorpayPayment();
   }
 

@@ -141,7 +141,7 @@ export default function AdminOrdersPage() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-3 font-medium">₹{(order.amount / 100).toFixed(0)}</td>
+                    <td className="px-3 font-medium">₹{order.amount.toFixed(2)}</td>
                     <td className="px-3">{getStatusBadge(order.status)}</td>
                     <td className="px-3 text-xs text-gray-500 dark:text-gray-400">
                       {new Date(order.createdAt).toLocaleDateString("en-IN", {

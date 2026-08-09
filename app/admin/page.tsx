@@ -12,7 +12,7 @@ export default async function AdminDashboard() {
   ]);
 
   const cards = [
-    { label: "Total Revenue", value: `₹${(totalRevenue._sum.amount ?? 0) / 100}`, icon: "💰", color: "text-green-600" },
+    { label: "Total Revenue", value: `₹${(totalRevenue._sum.amount ?? 0).toFixed(2)}`, icon: "💰", color: "text-green-600" },
     { label: "Orders", value: orderCount, icon: "📦", color: "text-brand-500" },
     { label: "Customers", value: customerCount, icon: "👥", color: "text-purple-600" },
     { label: "Products", value: productCount, icon: "📚", color: "text-amber-600" },
@@ -48,7 +48,7 @@ export default async function AdminDashboard() {
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 truncate">{c.label}</p>
-                <p className={`text-xl sm:text-2xl font-bold ${c.color} truncate`}>{c.value}</p>
+                <p className={`text-xl sm:text-2xl font-bold ${c.color}`}>{c.value}</p>
               </div>
               <span className="text-2xl sm:text-3xl shrink-0">{c.icon}</span>
             </div>
@@ -93,7 +93,7 @@ export default async function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-3">{o.items.length}</td>
-                    <td className="px-3 font-medium">₹{o.amount / 100}</td>
+                    <td className="px-3 font-medium">₹{o.amount.toFixed(2)}</td>
                     <td className="px-3">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
