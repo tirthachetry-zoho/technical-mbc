@@ -25,6 +25,9 @@ export default function ContactPage() {
     setTimeout(() => setSubmitted(false), 3000);
   };
 
+  const supportWhatsApp = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "918135052007";
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com";
+
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Contact Us</h1>
@@ -101,20 +104,20 @@ export default function ContactPage() {
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Email</h3>
-                <a href="mailto:tirthachetri12@gmail.com" className="text-brand-500 hover:underline">
-                  tirthachetri12@gmail.com
+                <a href={`mailto:${supportEmail}`} className="text-brand-500 hover:underline">
+                  {supportEmail}
                 </a>
               </div>
               
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">WhatsApp</h3>
                 <a 
-                  href="https://wa.me/917086831426?text=Hi%2C%20I%20need%20help%20with%20my%20order%20on%20PDF%20Store." 
+                  href={`https://wa.me/${supportWhatsApp}?text=Hi%2C%20I%20need%20help%20with%20my%20order%20on%20PDF%20Store.`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-brand-500 hover:underline"
                 >
-                  +91 70868 31426
+                  +91 {supportWhatsApp.slice(-10, -8)} {supportWhatsApp.slice(-8, -5)} {supportWhatsApp.slice(-5)}
                 </a>
               </div>
             </div>
