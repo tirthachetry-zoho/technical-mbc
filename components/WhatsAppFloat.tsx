@@ -1,8 +1,9 @@
 "use client";
 
 export default function WhatsAppFloat() {
-  const whatsappNumber = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "918135052007";
-  const whatsappUrl = `https://wa.me/${whatsappNumber}`;
+  const whatsappNumber = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "917086831426";
+  const message = encodeURIComponent("Hi, I need help with my order on PDF Store.");
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
 
   return (
     <a

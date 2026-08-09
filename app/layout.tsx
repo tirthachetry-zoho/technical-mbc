@@ -117,12 +117,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <p className="font-semibold mb-2">Support</p>
               <ul className="space-y-1 text-gray-500 dark:text-gray-400">
                 <li>
-                  <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className="hover:text-brand-500">
-                    {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}
+                  <a href="mailto:tirthachetri12@gmail.com" className="hover:text-brand-500">
+                    tirthachetri12@gmail.com
                   </a>
                 </li>
                 <li>
-                  <a href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-500">
+                  <a href="https://wa.me/917086831426?text=Hi%2C%20I%20need%20help%20with%20my%20order%20on%20PDF%20Store." target="_blank" rel="noopener noreferrer" className="hover:text-brand-500">
                     WhatsApp Support
                   </a>
                 </li>
