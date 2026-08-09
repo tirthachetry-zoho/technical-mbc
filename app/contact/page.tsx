@@ -2,11 +2,6 @@
 
 import { useState } from "react";
 
-export const metadata = {
-  title: "Contact Us - TechnicalMBC",
-  description: "Get in touch with TechnicalMBC for any queries or support regarding PDF study materials.",
-};
-
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",
@@ -26,7 +21,7 @@ export default function ContactPage() {
   };
 
   const supportWhatsApp = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "918135052007";
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@example.com";
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "Chetrymonbahadur109@gmail.com";
 
   return (
     <div className="max-w-4xl mx-auto">
