@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {/* Footer */}
         <footer className="border-t border-gray-200 dark:border-gray-700 mt-12">
-          <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+          <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div>
               <p className="font-bold text-brand-500 mb-2">TechnicalMBC</p>
               <p className="text-gray-500 dark:text-gray-400">Premium PDF study material for competitive exams in India.</p>
@@ -117,16 +117,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <p className="font-semibold mb-2">Support</p>
               <ul className="space-y-1 text-gray-500 dark:text-gray-400">
                 <li>
+                  <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className="hover:text-brand-500">
+                    {process.env.NEXT_PUBLIC_SUPPORT_EMAIL}
+                  </a>
+                </li>
+                <li>
+                  <a href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-500">
+                    WhatsApp Support
+                  </a>
+                </li>
+                <li>Instant PDF download</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold mb-2">Developer</p>
+              <ul className="space-y-1 text-gray-500 dark:text-gray-400">
+                <li>
                   <a href="mailto:tirthachetri12@gmail.com" className="hover:text-brand-500">
                     tirthachetri12@gmail.com
                   </a>
                 </li>
                 <li>
                   <a href="https://wa.me/917086831426?text=Hi%2C%20I%20need%20help%20with%20my%20order%20on%20PDF%20Store." target="_blank" rel="noopener noreferrer" className="hover:text-brand-500">
-                    WhatsApp Support
+                    +91 70868 31426
                   </a>
                 </li>
-                <li>Instant PDF download</li>
               </ul>
             </div>
           </div>
