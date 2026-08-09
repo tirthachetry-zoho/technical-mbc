@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         {/* Footer */}
         <footer className="border-t border-gray-200 dark:border-gray-700 mt-12">
-          <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+          <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 text-sm">
             <div>
               <p className="font-bold text-brand-500 mb-2">TechnicalMBC</p>
               <p className="text-gray-500 dark:text-gray-400">Premium PDF study material for competitive exams in India.</p>
@@ -111,6 +111,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <li><Link href="/login" className="hover:text-brand-500">Login</Link></li>
                 <li><Link href="/dashboard/downloads" className="hover:text-brand-500">My Downloads</Link></li>
                 <li><Link href="/wishlist" className="hover:text-brand-500">Wishlist</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold mb-2">Legal</p>
+              <ul className="space-y-1 text-gray-500 dark:text-gray-400">
+                <li><Link href="/about" className="hover:text-brand-500">About Us</Link></li>
+                <li><Link href="/contact" className="hover:text-brand-500">Contact Us</Link></li>
+                <li><Link href="/privacy" className="hover:text-brand-500">Privacy Policy</Link></li>
+                <li><Link href="/disclaimer" className="hover:text-brand-500">Disclaimer</Link></li>
               </ul>
             </div>
             <div>
