@@ -148,7 +148,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </li>
                 <li>
                   <a href="https://wa.me/917086831426?text=Hi%2C%20I%20need%20help%20with%20my%20order%20on%20PDF%20Store." target="_blank" rel="noopener noreferrer" className="hover:text-brand-500">
-                    +91 70868 31426
+                    Developer Whatsapp
                   </a>
                 </li>
               </ul>
